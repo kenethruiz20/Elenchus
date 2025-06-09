@@ -1,175 +1,175 @@
-# 🎯 NotebookLM Replica
+# NotebookLM Replica
 
-A pixel-perfect recreation of Google's NotebookLM interface built with **Next.js**, **React**, **Tailwind CSS**, and **Zustand**.
+A faithful recreation of Google's NotebookLM interface using modern web technologies. This project replicates the exact UI/UX, three-panel layout, and core functionality of NotebookLM.
 
-## 🌟 Features
+![NotebookLM Replica Screenshot](https://via.placeholder.com/800x400/1e293b/f8fafc?text=NotebookLM+Replica)
 
-### ✅ Complete UI Recreation
-- **Three-panel layout**: Sources, Chat, and Studio panels
-- **Dark theme**: Exact color matching with NotebookLM
-- **Responsive design**: Mobile and desktop layouts
-- **Smooth animations**: Framer Motion transitions
-- **Modern typography**: Inter font family
+## 🚀 Features
 
-### 📁 Sources Management
-- **Drag & drop file upload**: Support for PDFs, DOCs, TXT, audio files
-- **File processing states**: Upload, processing, ready, error indicators
-- **Search functionality**: Filter sources by name
-- **File metadata**: Size, upload date, file type icons
+### ✅ Fully Implemented
+- **Three-Panel Layout**: Exact replica of Sources (left), Chat (center), and Studio (right) panels
+- **Dark Theme**: Pixel-perfect recreation of NotebookLM's dark interface
+- **File Upload System**: Upload PDFs, DOCs, and text files as sources
+- **Interactive Chat Interface**: Real-time chat with AI-like responses
+- **Notes Management**: Create study guides, briefing docs, FAQs, and timelines
+- **Audio Overview Section**: Deep dive conversation settings with customization
+- **Responsive Design**: Mobile-friendly with proper breakpoints
+- **State Management**: Zustand for efficient global state handling
+- **Modern UI Components**: Hover effects, transitions, and animations
 
-### 💬 Chat Interface
-- **Real-time messaging**: User and AI conversation flow
-- **Typing indicators**: Animated typing state
-- **Message history**: Persistent chat storage
-- **Quick actions**: Suggested prompts and conversation starters
-- **Source attribution**: Messages linked to relevant sources
-
-### 🎙️ Audio Overview
-- **AI-generated conversations**: Simulated deep-dive audio content
-- **Audio controls**: Play, pause, progress tracking
-- **Customization options**: Host configuration and content tuning
-- **Status tracking**: Generation progress and completion states
-
-### 📝 Notes & Study Tools
-- **Study guides**: AI-generated learning materials
-- **FAQs**: Frequently asked questions from sources
-- **Timelines**: Chronological content organization
-- **Briefing docs**: Executive summaries
-- **Note management**: Create, edit, and organize notes
+### 🔄 Interactive Features
+- **Source Management**: Add, view, and remove sources with file type detection
+- **Chat Functionality**: Send messages, get AI responses, attach files
+- **Note Creation**: Generate different types of notes with one click
+- **Audio Customization**: Modal for customizing conversation style and language
+- **Real-time Updates**: Live source count and chat message handling
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS with custom design tokens
+- **Frontend**: Next.js 14 + React 18 + TypeScript
+- **Styling**: Tailwind CSS with custom dark theme
 - **State Management**: Zustand
-- **Animations**: Framer Motion
 - **Icons**: Lucide React
-- **File Handling**: React Dropzone
-- **Typography**: Google Fonts (Inter)
+- **UI Components**: Headless UI (for accessibility)
+- **Development**: ESLint + TypeScript strict mode
 
 ## 📦 Installation
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-
-### Setup
-
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/kenethruiz20/Elenchus.git
-   cd Elenchus/frontend
+   git clone <repository-url>
+   cd notebooklm-replica
    ```
 
 2. **Install dependencies**
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
-3. **Start the development server**
+3. **Run the development server**
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
 4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 🚀 Usage
+## 🎯 Usage
 
 ### Getting Started
-1. **Upload sources**: Click "Add" in the Sources panel to upload documents
-2. **Wait for processing**: Files will show processing status
-3. **Start chatting**: Once sources are ready, use the chat interface
-4. **Generate content**: Create study guides, FAQs, and audio overviews
-5. **Manage notes**: Save and organize your learning materials
+1. **Add Sources**: Click the "Add" button in the Sources panel or use the upload button in the chat
+2. **Upload Files**: Support for PDF, DOC, DOCX, and TXT files
+3. **Start Chatting**: Ask questions about your uploaded sources
+4. **Create Notes**: Use the Studio panel to generate study guides, timelines, etc.
+5. **Audio Overview**: Customize and generate audio conversations
 
-### File Types Supported
-- **Documents**: PDF, DOC, DOCX, TXT
-- **Audio**: MP3, WAV, M4A
-- **Web**: URLs (paste website links)
-- **Text**: Direct text input
+### Key Interactions
+- **File Upload**: Drag & drop or click to upload files
+- **Chat**: Type messages and press Enter to send
+- **Voice Input**: Hold the microphone button to record (UI only)
+- **Note Generation**: Click any note type button to create a new note
+- **Customization**: Click "Customize" in Audio Overview for settings
+
+## 📁 Project Structure
+
+```
+notebooklm-replica/
+├── app/
+│   ├── globals.css          # Global styles with Tailwind
+│   ├── layout.tsx           # Root layout component
+│   └── page.tsx             # Main page with three-panel layout
+├── components/
+│   ├── Header.tsx           # Top navigation bar
+│   ├── SourcesPanel.tsx     # Left panel - file management
+│   ├── ChatPanel.tsx        # Center panel - chat interface
+│   └── StudioPanel.tsx      # Right panel - notes & audio
+├── store/
+│   └── useStore.ts          # Zustand state management
+├── package.json             # Dependencies and scripts
+├── tailwind.config.js       # Tailwind configuration
+├── tsconfig.json            # TypeScript configuration
+├── next.config.js           # Next.js configuration
+└── README.md                # This file
+```
 
 ## 🎨 Design Fidelity
 
-This replica maintains 1:1 visual fidelity with the original NotebookLM:
+The replica matches the original NotebookLM interface with:
+- **Exact Color Palette**: Matching dark theme colors
+- **Precise Spacing**: Identical padding, margins, and component sizing
+- **Typography**: Google Sans font family
+- **Interactive States**: Hover effects, focus states, and transitions
+- **Layout Behavior**: Responsive panel sizing and overflow handling
+- **Icon Usage**: Consistent Lucide React icons throughout
 
-- **Color palette**: Exact hex values matching the dark theme
-- **Typography**: Inter font with proper weights and sizes
-- **Spacing**: Consistent padding, margins, and component sizing
-- **Interactions**: Hover states, focus indicators, and transitions
-- **Layout**: Responsive grid system and panel behaviors
+## 🔧 Customization
 
-## 🔧 Development
-
-### Project Structure
+### Adding New Note Types
+```typescript
+// In components/StudioPanel.tsx
+const noteTypes = [
+  { id: 'custom-type', label: 'Custom Note', icon: CustomIcon },
+  // ... existing types
+];
 ```
-frontend/
-├── app/                 # Next.js App Router pages
-├── components/          # React components
-├── lib/                 # Utilities and store
-└── public/              # Static assets
-```
 
-### Key Components
-- `Header.tsx`: Top navigation and title management
-- `SourcesPanel.tsx`: File upload and source management
-- `ChatPanel.tsx`: Conversation interface
-- `StudioPanel.tsx`: Audio overview and notes section
+### Modifying Theme Colors
+```javascript
+// In tailwind.config.js
+theme: {
+  extend: {
+    colors: {
+      'custom-primary': '#your-color',
+    }
+  }
+}
+```
 
 ### State Management
-The app uses Zustand for state management with the following stores:
-- Sources and file uploads
-- Chat messages and conversation state
-- Notes and study materials
-- Audio overview generation
-- UI state and panel visibility
-
-## 🎯 Roadmap
-
-### Current Features
-- ✅ Complete UI recreation
-- ✅ File upload system
-- ✅ Chat interface
-- ✅ Notes management
-- ✅ Audio overview simulation
-
-### Future Enhancements
-- [ ] Real AI integration (OpenAI/Anthropic)
-- [ ] Actual file processing and OCR
-- [ ] Audio generation capabilities
-- [ ] Real-time collaboration
-- [ ] Database persistence
-- [ ] Authentication system
-- [ ] Advanced search and filtering
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Push your code to GitHub
-2. Connect your repository to [Vercel](https://vercel.com)
-3. Deploy automatically with zero configuration
-
-### Manual Deployment
-```bash
-npm run build
-npm start
+```typescript
+// In store/useStore.ts
+export interface StoreState {
+  // Add new state properties
+  customFeature: boolean;
+  setCustomFeature: (value: boolean) => void;
+}
 ```
+
+## 🚧 Future Enhancements
+
+- **Real AI Integration**: Connect to OpenAI or similar APIs
+- **Authentication**: Firebase Auth or Auth0 integration
+- **Database Persistence**: MongoDB for saving notebooks
+- **Real-time Collaboration**: Socket.io for multi-user editing
+- **Voice Recognition**: Web Speech API for voice input
+- **File Processing**: PDF text extraction and analysis
+- **Export Features**: Download notes and conversations
+
+## 📱 Responsive Design
+
+- **Mobile**: Collapsible panels with tab navigation
+- **Tablet**: Two-panel layout with floating elements
+- **Desktop**: Full three-panel layout as shown
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is for educational purposes and is not affiliated with Google or NotebookLM.
+This project is for educational purposes only. NotebookLM is a trademark of Google LLC.
 
 ## 🙏 Acknowledgments
 
-- **Google NotebookLM**: Original inspiration and design
-- **Vercel**: Next.js framework and deployment platform
-- **Tailwind Labs**: Amazing CSS framework
-- **Lucide**: Beautiful icon library
+- Google NotebookLM team for the original design inspiration
+- Tailwind CSS for the utility-first framework
+- Zustand for lightweight state management
+- Lucide React for beautiful icons
 
 ---
 
-**Note**: This is a visual recreation for learning purposes. For actual AI-powered document analysis, please use the official [NotebookLM](https://notebooklm.google.com). 
+**Note**: This is a UI/UX replica for demonstration purposes. It does not include actual AI processing capabilities or file content analysis. 

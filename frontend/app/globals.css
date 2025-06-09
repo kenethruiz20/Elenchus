@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-nb-accent hover:bg-nb-accent-hover text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-nb-bg-secondary hover:bg-nb-hover text-nb-text px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-nb-border;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-nb-hover text-nb-text px-3 py-2 rounded-lg font-medium transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-nb-card border border-nb-border rounded-lg;
+  }
+  
+  .input-field {
+    @apply bg-nb-bg-secondary border border-nb-border rounded-lg px-3 py-2 text-nb-text placeholder-nb-text-muted focus:outline-none focus:border-nb-accent transition-colors duration-200;
+  }
+  
+  .panel-divider {
+    @apply w-px bg-nb-border;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+} 

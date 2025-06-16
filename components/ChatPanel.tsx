@@ -28,15 +28,32 @@ const ChatPanel: React.FC = () => {
     scrollToBottom();
   }, [chatMessages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputValue.trim()) {
       addChatMessage(inputValue.trim(), true);
+      const userMessage = inputValue.trim();
       setInputValue('');
-      
-      // Simulate AI response after a delay
-      setTimeout(() => {
-        addChatMessage("I'd be happy to help you with that! Could you please add some sources first so I can provide more relevant information?", false);
-      }, 1000);
+
+      try {
+        // Llama al backend de Chainlit (ajusta la URL si es necesario)
+        const response = await fetch('http://localhost:8000/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: userMessage }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        // Ajusta 'data.content' según la estructura de respuesta de tu backend
+        addChatMessage(data.content || 'No response from AI assistant.', false);
+      } catch (error) {
+        addChatMessage('Error connecting to AI assistant.', false);
+      }
     }
   };
 

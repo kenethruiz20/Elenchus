@@ -1,3 +1,37 @@
+# Environment variables
+.env
+.env.*
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Chainlit specific
+.chainlit/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
 # Dependencies
 frontend/node_modules/
 backend/node_modules/
@@ -22,7 +56,10 @@ dist/
 
 # Misc
 .DS_Store
+
 *.pem
+*.crt
+*.key
 
 # Debug
 npm-debug.log*
@@ -39,7 +76,6 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
-
 # IDE
 .vscode/
 .idea/
@@ -47,6 +83,10 @@ next-env.d.ts
 # OS
 Thumbs.db
 
+
 # Logs
 logs
-*.log 
+*.log
+
+# Claves y secretos
+github-actions-key.json 

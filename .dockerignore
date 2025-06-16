@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache
+.coverage
+htmlcov/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables (will be set in Cloud Run)
+.env
+
+# Chainlit specific
+.chainlit/
+
+# Documentation
+README.md
+
+# CI/CD
+.github/
+
+# Node modules (if any)
+node_modules/ 

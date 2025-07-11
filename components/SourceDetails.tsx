@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, ChevronDown, ChevronUp, BookOpen, Calendar, FileText, User, ChevronLeft } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, BookOpen, Calendar, FileText, User, ChevronLeft, ArrowLeft } from 'lucide-react';
 
 interface Source {
   id: string;
@@ -53,24 +53,13 @@ const SourceDetails: React.FC<SourceDetailsProps> = ({ source, onClose, onCollap
       <div className="p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Sources</h2>
-          <div className="flex items-center space-x-1">
-            {onCollapse && (
-              <button 
-                onClick={onCollapse}
-                className="p-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                title="Collapse Sources"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
-            <button 
-              onClick={onClose}
-              className="p-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              title="Close Source Details"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            title="Back to Sources"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
         </div>
       </div>
 

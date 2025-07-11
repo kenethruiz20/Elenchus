@@ -1,27 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, 
   FileText,
-  Clock,
-  HelpCircle,
-  BookOpen,
-  MoreHorizontal,
   Mail,
-  Briefcase,
   Scale,
   Shield,
-  CheckCircle,
-  MessageSquare,
   Search,
-  Users,
-  Folder,
-  PenTool,
   ChevronRight,
-  Settings
+  Settings,
+  Maximize2,
+  Edit3,
+  Clock
 } from 'lucide-react';
+import Link from 'next/link';
 import { useStore } from '../store/useStore';
+import type { Note } from '../store/useStore';
+import NoteEditor from './NoteEditor';
 
 interface StudioPanelProps {
   panelState: 'normal' | 'collapsed';
@@ -32,10 +28,12 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
   const { 
     notes, 
     addNote, 
-    deleteNote, 
-    selectedNoteType, 
-    setSelectedNoteType 
+    updateNote
   } = useStore();
+  
+  const [workflowSearch, setWorkflowSearch] = useState('');
+  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   
 
   // Workflow definitions
@@ -96,46 +94,120 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
     }
   ];
 
-  const noteTypes = [
-    { id: 'study-guide', label: 'Study guide', icon: BookOpen },
-    { id: 'briefing-doc', label: 'Briefing doc', icon: FileText },
-    { id: 'faq', label: 'FAQ', icon: HelpCircle },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
-  ] as const;
+  const filteredWorkflows = workflows.filter(workflow => {
+    const matchesSearch = workflow.title.toLowerCase().includes(workflowSearch.toLowerCase()) ||
+                         workflow.description.toLowerCase().includes(workflowSearch.toLowerCase());
+    return matchesSearch;
+  });
 
-  const handleCreateNote = (type: typeof noteTypes[number]['id']) => {
-    const noteTypeLabels = {
-      'study-guide': 'Study Guide',
-      'briefing-doc': 'Briefing Document', 
-      'faq': 'FAQ',
-      'timeline': 'Timeline'
-    };
-    
-    addNote({
-      title: `${noteTypeLabels[type]} ${notes.filter(n => n.type === type).length + 1}`,
-      type,
-      content: ''
-    });
+  const togglePanel = () => {
+    if (panelState === 'collapsed') {
+      onPanelStateChange('normal');
+    } else {
+      onPanelStateChange('collapsed');
+    }
   };
+
+
+  const handleCreateNote = () => {
+    setSelectedNote(null);
+    setIsNoteEditorOpen(true);
+  };
+
+  const handleEditNote = (note: Note) => {
+    setSelectedNote(note);
+    setIsNoteEditorOpen(true);
+  };
+
+  const handleSaveNote = (title: string, content: string) => {
+    if (selectedNote) {
+      // Update existing note
+      updateNote(selectedNote.id, {
+        title,
+        content
+      });
+    } else {
+      // Create new note
+      addNote({
+        title,
+        content,
+        type: 'general'
+      });
+    }
+  };
+
+  const truncateHTML = (html: string, maxLength: number = 100) => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
+  // Handle collapsed state
+  if (panelState === 'collapsed') {
+    return (
+      <div className="h-full bg-gray-50 dark:bg-slate-800/50">
+        <div className="p-2 border-b border-gray-200 dark:border-slate-700">
+          <button
+            onClick={togglePanel}
+            className="w-full p-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            title="Expand Studio"
+          >
+            <ChevronRight className="w-5 h-5 rotate-180" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-800/50">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Research Studio</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={togglePanel}
+              className="p-1 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              title="Collapse Studio"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Research Studio</h2>
+          </div>
+        </div>
       </div>
 
       {/* Workflows Section */}
       <div className="p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Workflows</h3>
-          <button className="text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200">
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
+          <Link 
+            href="/workflows"
+            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex items-center space-x-1 transition-colors"
+          >
+            <Settings className="w-3 h-3" />
+            <span>Manage</span>
+          </Link>
         </div>
         
-        <div className="grid grid-cols-1 gap-3">
-          {workflows.map((workflow) => {
+        {/* Search Bar */}
+        <div className="relative mb-4">
+          <input
+            type="text"
+            value={workflowSearch}
+            onChange={(e) => setWorkflowSearch(e.target.value)}
+            placeholder="Search workflows..."
+            className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Search className="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+        
+        <div className="max-h-64 overflow-y-auto">
+          <div className="grid grid-cols-1 gap-3">
+            {filteredWorkflows.map((workflow) => {
             const Icon = workflow.icon;
             return (
               <button
@@ -156,6 +228,7 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 
@@ -163,37 +236,55 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Research Tools</h3>
-            <button className="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Notes</h3>
+            <button 
+              onClick={handleCreateNote}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex items-center space-x-1 transition-colors"
+            >
               <Plus className="w-3 h-3" />
               <span>Add note</span>
             </button>
           </div>
           
-          {/* Note Type Buttons */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {noteTypes.map((noteType) => {
-              const Icon = noteType.icon;
-              return (
-                <button
-                  key={noteType.id}
-                  onClick={() => handleCreateNote(noteType.id)}
-                  className="flex items-center space-x-2 p-3 bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-left"
-                >
-                  <Icon className="w-4 h-4 text-gray-600 dark:text-slate-300" />
-                  <span className="text-sm text-gray-900 dark:text-gray-100">{noteType.label}</span>
-                </button>
-              );
-            })}
-          </div>
-          
           {/* Notes List */}
           {notes.length > 0 ? (
             <div className="space-y-3">
-              <p className="text-xs text-slate-500 dark:text-slate-500 text-gray-500 mb-2">No notes yet</p>
-              <p className="text-xs text-slate-400 dark:text-slate-400 text-gray-600">
-                Create your first note using the buttons above.
-              </p>
+              {notes.map((note) => (
+                <div
+                  key={note.id}
+                  className="bg-gray-100 dark:bg-slate-700/50 rounded-lg p-3 group hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  onClick={() => handleEditNote(note)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Edit3 className="w-4 h-4 text-gray-600 dark:text-slate-300 flex-shrink-0" />
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {note.title}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed">
+                        {note.content ? truncateHTML(note.content, 80) : 'No content'}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-gray-500 dark:text-slate-500">
+                          {note.updatedAt ? new Date(note.updatedAt).toLocaleDateString() : 'No date'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditNote(note);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-all"
+                      title="Expand note"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -202,13 +293,20 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
               </div>
               <p className="text-sm text-gray-600 dark:text-slate-400">No notes yet</p>
               <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
-                Create your first note using the buttons above
+                Create your first note using the button above
               </p>
             </div>
           )}
         </div>
       </div>
 
+      {/* Note Editor Modal */}
+      <NoteEditor
+        isOpen={isNoteEditorOpen}
+        onClose={() => setIsNoteEditorOpen(false)}
+        note={selectedNote}
+        onSave={handleSaveNote}
+      />
     </div>
   );
 };

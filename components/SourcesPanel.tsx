@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Plus, Search, FileText, Upload, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import SourceDetails from './SourceDetails';
+import DiscoverModal from './DiscoverModal';
 
 interface SourcesPanelProps {
   panelState: 'normal' | 'expanded' | 'collapsed';
@@ -14,6 +15,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
   const { sources, addSource, removeSource } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [isDiscoverModalOpen, setIsDiscoverModalOpen] = useState(false);
 
   // Handle panel state changes when source is selected/deselected
   useEffect(() => {
@@ -126,7 +128,10 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
             <span>Add</span>
           </button>
           
-          <button className="w-full flex items-center justify-center space-x-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg transition-colors">
+          <button 
+            onClick={() => setIsDiscoverModalOpen(true)}
+            className="w-full flex items-center justify-center space-x-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg transition-colors"
+          >
             <Search className="w-4 h-4" />
             <span>Discover</span>
           </button>
@@ -161,14 +166,16 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
                 className="group bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg p-3 transition-colors cursor-pointer"
                 onClick={() => handleSourceSelect(source.id)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
+                <div className="flex items-start justify-between min-w-0">
+                  <div className="flex items-start space-x-3 min-w-0 flex-1">
                     <div className="w-8 h-8 bg-gray-200 dark:bg-slate-600 rounded flex items-center justify-center flex-shrink-0">
                       <FileText className="w-4 h-4 text-gray-600 dark:text-slate-300" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{source.name}</p>
-                      <p className="text-xs text-gray-600 dark:text-slate-400 mt-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={source.name}>
+                        {source.name}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 truncate">
                         {source.type.toUpperCase()}
                         {source.size && ` • ${formatFileSize(source.size)}`}
                       </p>
@@ -194,6 +201,13 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
       <div className="p-4 border-t border-gray-200 dark:border-slate-700 text-center">
         <p className="text-xs text-gray-500 dark:text-slate-500">{sources.length} sources</p>
       </div>
+
+      {/* Discover Modal */}
+      <DiscoverModal
+        isOpen={isDiscoverModalOpen}
+        onClose={() => setIsDiscoverModalOpen(false)}
+        onAddSource={addSource}
+      />
     </div>
   );
 };

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Settings, Share, BarChart3, User, ArrowLeft, LogOut, MessageSquare, LayoutDashboard, Moon, Sun } from 'lucide-react';
+import { User, ArrowLeft, LogOut, MessageSquare, LayoutDashboard, Moon, Sun, Settings } from 'lucide-react';
 import { useTheme } from '@/app/context/ThemeContext';
 
 const Header: React.FC = () => {
@@ -42,20 +42,6 @@ const Header: React.FC = () => {
 
       {/* Right side - Controls */}
       <div className="flex items-center space-x-2">
-        <button className="flex items-center space-x-2 px-3 py-1.5 text-sm text-slate-300 dark:text-slate-300 text-gray-600 hover:text-slate-100 dark:hover:text-slate-100 hover:text-gray-900 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-gray-100 rounded-md transition-colors">
-          <BarChart3 className="w-4 h-4" />
-          <span>Analytics</span>
-        </button>
-        
-        <button className="flex items-center space-x-2 px-3 py-1.5 text-sm text-slate-300 dark:text-slate-300 text-gray-600 hover:text-slate-100 dark:hover:text-slate-100 hover:text-gray-900 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-gray-100 rounded-md transition-colors">
-          <Share className="w-4 h-4" />
-          <span>Share</span>
-        </button>
-        
-        <button className="p-1.5 text-slate-300 dark:text-slate-300 text-gray-600 hover:text-slate-100 dark:hover:text-slate-100 hover:text-gray-900 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-gray-100 rounded-md transition-colors">
-          <Settings className="w-5 h-5" />
-        </button>
-        
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}

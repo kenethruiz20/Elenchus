@@ -208,7 +208,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
       <div className="border-t border-gray-200 dark:border-slate-700 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-slate-500 mb-3">
-            <span>NotebookLM can be inaccurate, please double check its responses.</span>
+            <span>Elenchus...</span>
             <span>•</span>
             <span>{sources.length} sources</span>
           </div>

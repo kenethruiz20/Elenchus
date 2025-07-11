@@ -153,7 +153,7 @@ export default function NotebookOverview() {
                     </Link>
                     
                     <Link 
-                      href="/app"
+                      href="/dashboard"
                       className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
                       onClick={() => setIsDropdownOpen(false)}
                     >

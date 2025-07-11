@@ -77,7 +77,7 @@ const Header: React.FC = () => {
               </Link>
               
               <Link 
-                href="/app"
+                href="/dashboard"
                 className="flex items-center px-4 py-2 text-sm text-slate-300 dark:text-slate-300 text-gray-700 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-gray-100 hover:text-slate-100 dark:hover:text-slate-100 hover:text-gray-900 transition-colors"
                 onClick={() => setIsDropdownOpen(false)}
               >

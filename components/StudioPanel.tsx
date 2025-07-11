@@ -12,7 +12,8 @@ import {
   Settings,
   Maximize2,
   Edit3,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '../store/useStore';
@@ -28,7 +29,8 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
   const { 
     notes, 
     addNote, 
-    updateNote
+    updateNote,
+    deleteNote
   } = useStore();
   
   const [workflowSearch, setWorkflowSearch] = useState('');
@@ -133,6 +135,12 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
         content,
         type: 'general'
       });
+    }
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    if (confirm('Are you sure you want to delete this note?')) {
+      deleteNote(noteId);
     }
   };
 
@@ -270,6 +278,16 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
                         <span className="text-xs text-gray-500 dark:text-slate-500">
                           {note.updatedAt ? new Date(note.updatedAt).toLocaleDateString() : 'No date'}
                         </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNote(note.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all"
+                          title="Delete note"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                     <button

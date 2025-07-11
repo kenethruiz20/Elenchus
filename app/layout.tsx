@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import React from 'react'
 import './globals.css'
+import { ThemeProvider } from './context/ThemeContext'
 
 export const metadata: Metadata = {
-  title: 'NotebookLM Replica',
-  description: 'A faithful recreation of Google NotebookLM interface',
+  title: 'Elenchus AI - Legal Research Assistant',
+  description: 'AI-powered legal research and document analysis platform',
   viewport: 'width=device-width, initial-scale=1',
 }
 
@@ -14,9 +15,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-slate-900 text-slate-100 antialiased">
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen antialiased">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

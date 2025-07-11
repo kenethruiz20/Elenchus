@@ -8,23 +8,26 @@
     "start": "next start"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.17",
+    "@types/quill": "2.0.14",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.294.0",
     "next": "14.0.3",
+    "quill": "2.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zustand": "^4.4.7",
-    "lucide-react": "^0.294.0",
-    "@headlessui/react": "^1.7.17",
-    "clsx": "^2.0.0",
-    "uuid": "^9.0.1"
+    "react-quill": "2.0.0",
+    "uuid": "^9.0.1",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "typescript": "^5.3.2",
     "@types/node": "^20.9.0",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@types/uuid": "^9.0.7",
-    "tailwindcss": "^3.3.5",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31"
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.3.2"
   }
-} 
+}

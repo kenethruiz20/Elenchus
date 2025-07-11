@@ -3,165 +3,302 @@
 import React, { useState } from 'react';
 import { 
   Plus, 
-  Play, 
-  Pause, 
-  Volume2, 
-  Download, 
-  Share,
   FileText,
+  Mail,
+  Scale,
+  Shield,
+  Search,
+  ChevronRight,
+  Settings,
+  Maximize2,
+  Edit3,
   Clock,
-  HelpCircle,
-  BookOpen,
-  MoreHorizontal,
-  Sparkles,
-  Users,
-  Settings
+  Trash2
 } from 'lucide-react';
+import Link from 'next/link';
 import { useStore } from '../store/useStore';
+import type { Note } from '../store/useStore';
+import NoteEditor from './NoteEditor';
 
-const StudioPanel: React.FC = () => {
+interface StudioPanelProps {
+  panelState: 'normal' | 'collapsed';
+  onPanelStateChange: (state: 'normal' | 'collapsed') => void;
+}
+
+const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChange }) => {
   const { 
     notes, 
     addNote, 
-    deleteNote, 
-    selectedNoteType, 
-    setSelectedNoteType 
+    updateNote,
+    deleteNote
   } = useStore();
   
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [workflowSearch, setWorkflowSearch] = useState('');
+  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  
 
-  const noteTypes = [
-    { id: 'study-guide', label: 'Study guide', icon: BookOpen },
-    { id: 'briefing-doc', label: 'Briefing doc', icon: FileText },
-    { id: 'faq', label: 'FAQ', icon: HelpCircle },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
-  ] as const;
+  // Workflow definitions
+  const workflows = [
+    {
+      id: 'send-email',
+      title: 'Send email',
+      description: 'Send case updates to clients',
+      icon: Mail,
+      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      iconColor: 'text-red-600 dark:text-red-400',
+      category: 'communication'
+    },
+    {
+      id: 'create-brief',
+      title: 'Create brief',
+      description: 'Generate legal brief from sources',
+      icon: FileText,
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      category: 'document'
+    },
+    {
+      id: 'case-analysis',
+      title: 'Case analysis',
+      description: 'Analyze case law and precedents',
+      icon: Scale,
+      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      category: 'analysis'
+    },
+    {
+      id: 'contract-review',
+      title: 'Contract review',
+      description: 'Review and flag contract issues',
+      icon: Shield,
+      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      iconColor: 'text-green-600 dark:text-green-400',
+      category: 'review'
+    },
+    {
+      id: 'legal-research',
+      title: 'Legal research',
+      description: 'Research relevant statutes and cases',
+      icon: Search,
+      bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+      iconColor: 'text-yellow-600 dark:text-yellow-400',
+      category: 'research'
+    },
+    {
+      id: 'create-timeline',
+      title: 'Create timeline',
+      description: 'Build case timeline from facts',
+      icon: Clock,
+      bgColor: 'bg-indigo-50 dark:bg-indigo-900/20',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      category: 'organization'
+    }
+  ];
 
-  const handleCreateNote = (type: typeof noteTypes[number]['id']) => {
-    const noteTypeLabels = {
-      'study-guide': 'Study Guide',
-      'briefing-doc': 'Briefing Document', 
-      'faq': 'FAQ',
-      'timeline': 'Timeline'
-    };
-    
-    addNote({
-      title: `${noteTypeLabels[type]} ${notes.filter(n => n.type === type).length + 1}`,
-      content: `This is a ${noteTypeLabels[type].toLowerCase()} generated from your sources.`,
-      type: type
-    });
+  const filteredWorkflows = workflows.filter(workflow => {
+    const matchesSearch = workflow.title.toLowerCase().includes(workflowSearch.toLowerCase()) ||
+                         workflow.description.toLowerCase().includes(workflowSearch.toLowerCase());
+    return matchesSearch;
+  });
+
+  const togglePanel = () => {
+    if (panelState === 'collapsed') {
+      onPanelStateChange('normal');
+    } else {
+      onPanelStateChange('collapsed');
+    }
   };
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+
+  const handleCreateNote = () => {
+    setSelectedNote(null);
+    setIsNoteEditorOpen(true);
   };
 
-  return (
-    <div className="h-full flex flex-col bg-slate-800/50">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-700">
-        <h2 className="text-lg font-medium text-gray-100">Studio</h2>
-      </div>
+  const handleEditNote = (note: Note) => {
+    setSelectedNote(note);
+    setIsNoteEditorOpen(true);
+  };
 
-      {/* Audio Overview Section */}
-      <div className="p-4 border-b border-slate-700">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-gray-100">Audio Overview</h3>
-          <button className="text-slate-400 hover:text-slate-200">
-            <MoreHorizontal className="w-4 h-4" />
+  const handleSaveNote = (title: string, content: string) => {
+    if (selectedNote) {
+      // Update existing note
+      updateNote(selectedNote.id, {
+        title,
+        content
+      });
+    } else {
+      // Create new note
+      addNote({
+        title,
+        content,
+        type: 'general'
+      });
+    }
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    if (confirm('Are you sure you want to delete this note?')) {
+      deleteNote(noteId);
+    }
+  };
+
+  const truncateHTML = (html: string, maxLength: number = 100) => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
+  // Handle collapsed state
+  if (panelState === 'collapsed') {
+    return (
+      <div className="h-full bg-gray-50 dark:bg-slate-800/50">
+        <div className="p-2 border-b border-gray-200 dark:border-slate-700">
+          <button
+            onClick={togglePanel}
+            className="w-full p-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            title="Expand Studio"
+          >
+            <ChevronRight className="w-5 h-5 rotate-180" />
           </button>
         </div>
-        
-        {/* Audio Preview Card */}
-        <div className="bg-slate-700/50 rounded-lg p-4 mb-4">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-100">Create an Audio Overview in more languages!</p>
-              <p className="text-xs text-slate-400">Learn more</p>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            {/* Deep Dive Conversation */}
-            <div className="bg-slate-800 rounded-lg p-3">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-                  <Users className="w-4 h-4 text-slate-300" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-100">Deep Dive conversation</p>
-                  <p className="text-xs text-slate-400">Two hosts</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={() => setShowCustomizeModal(true)}
-                    className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-gray-200 rounded-md transition-colors"
-                  >
-                    Customize
-                  </button>
-                  <button className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
-                    Generate
-                  </button>
-                </div>
-              </div>
-            </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-800/50">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={togglePanel}
+              className="p-1 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              title="Collapse Studio"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Research Studio</h2>
           </div>
         </div>
       </div>
 
-      {/* Notes Section */}
+      {/* Workflows Section */}
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Workflows</h3>
+          <Link 
+            href="/workflows"
+            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex items-center space-x-1 transition-colors"
+          >
+            <Settings className="w-3 h-3" />
+            <span>Manage</span>
+          </Link>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="relative mb-4">
+          <input
+            type="text"
+            value={workflowSearch}
+            onChange={(e) => setWorkflowSearch(e.target.value)}
+            placeholder="Search workflows..."
+            className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Search className="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+        
+        <div className="max-h-64 overflow-y-auto">
+          <div className="grid grid-cols-1 gap-3">
+            {filteredWorkflows.map((workflow) => {
+            const Icon = workflow.icon;
+            return (
+              <button
+                key={workflow.id}
+                className="flex items-start space-x-3 p-3 bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-left w-full"
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${workflow.bgColor}`}>
+                  <Icon className={`w-5 h-5 ${workflow.iconColor}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                    {workflow.title}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed">
+                    {workflow.description}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+          </div>
+        </div>
+      </div>
+
+      {/* Research Tools Section */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-100">Notes</h3>
-            <button className="flex items-center space-x-1 text-blue-400 hover:text-blue-300 text-sm">
-              <Plus className="w-4 h-4" />
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Notes</h3>
+            <button 
+              onClick={handleCreateNote}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex items-center space-x-1 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
               <span>Add note</span>
             </button>
           </div>
-
-          {/* Note Type Buttons */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
-            {noteTypes.map((noteType) => {
-              const Icon = noteType.icon;
-              return (
-                <button
-                  key={noteType.id}
-                  onClick={() => handleCreateNote(noteType.id)}
-                  className="flex items-center space-x-2 p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-colors text-left"
-                >
-                  <Icon className="w-4 h-4 text-slate-300" />
-                  <span className="text-sm text-gray-100">{noteType.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
+          
           {/* Notes List */}
           {notes.length > 0 ? (
             <div className="space-y-3">
               {notes.map((note) => (
-                <div key={note.id} className="bg-slate-700/50 hover:bg-slate-700 rounded-lg p-3 transition-colors">
+                <div
+                  key={note.id}
+                  className="bg-gray-100 dark:bg-slate-700/50 rounded-lg p-3 group hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  onClick={() => handleEditNote(note)}
+                >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-100 mb-1">{note.title}</h4>
-                      <p className="text-xs text-slate-400 mb-2">{note.content}</p>
-                      <p className="text-xs text-slate-500">
-                        {note.updatedAt.toLocaleDateString()}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Edit3 className="w-4 h-4 text-gray-600 dark:text-slate-300 flex-shrink-0" />
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {note.title}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed">
+                        {note.content ? truncateHTML(note.content, 80) : 'No content'}
                       </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-gray-500 dark:text-slate-500">
+                          {note.updatedAt ? new Date(note.updatedAt).toLocaleDateString() : 'No date'}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNote(note.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all"
+                          title="Delete note"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                     <button
-                      onClick={() => deleteNote(note.id)}
-                      className="text-slate-400 hover:text-slate-200 p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditNote(note);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-all"
+                      title="Expand note"
                     >
-                      <MoreHorizontal className="w-4 h-4" />
+                      <Maximize2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -169,84 +306,27 @@ const StudioPanel: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 bg-slate-700 rounded-lg flex items-center justify-center">
-                <FileText className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-gray-400 dark:text-slate-400" />
               </div>
-              <p className="text-sm text-slate-400 mb-2">No notes yet</p>
-              <p className="text-xs text-slate-500">Create your first note using the buttons above</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">No notes yet</p>
+              <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
+                Create your first note using the button above
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Customize Modal */}
-      {showCustomizeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-100">Customize Audio Overview</h3>
-              <button
-                onClick={() => setShowCustomizeModal(false)}
-                className="text-slate-400 hover:text-slate-200"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-100 mb-2">
-                  Conversation Style
-                </label>
-                <select className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-gray-100">
-                  <option>Deep Dive</option>
-                  <option>Overview</option>
-                  <option>Q&A</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-100 mb-2">
-                  Number of Hosts
-                </label>
-                <select className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-gray-100">
-                  <option>Two hosts</option>
-                  <option>One host</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-100 mb-2">
-                  Language
-                </label>
-                <select className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-2 text-gray-100">
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                  <option>German</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowCustomizeModal(false)}
-                className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowCustomizeModal(false)}
-                className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Note Editor Modal */}
+      <NoteEditor
+        isOpen={isNoteEditorOpen}
+        onClose={() => setIsNoteEditorOpen(false)}
+        note={selectedNote}
+        onSave={handleSaveNote}
+      />
     </div>
   );
 };
 
-export default StudioPanel; 
+export default StudioPanel;

@@ -1,10 +1,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Paperclip, Mic } from 'lucide-react';
+import { Send, Upload, Paperclip, Mic, ChevronRight, FileText, ChevronLeft, Settings } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
-const ChatPanel: React.FC = () => {
+interface ChatPanelProps {
+  sourcesPanelState?: 'normal' | 'expanded' | 'collapsed';
+  onExpandSources?: () => void;
+  studioPanelState?: 'normal' | 'collapsed';
+  onExpandStudio?: () => void;
+}
+
+const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources, studioPanelState, onExpandStudio }) => {
   const { 
     sources, 
     chatMessages, 
@@ -90,29 +97,29 @@ const ChatPanel: React.FC = () => {
 
   if (sources.length === 0 && chatMessages.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-slate-900">
+      <div className="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900">
         <div className="text-center max-w-md px-8">
           {/* Upload Icon */}
-          <div className="w-24 h-24 mx-auto mb-8 bg-slate-800 rounded-2xl flex items-center justify-center">
-            <Upload className="w-12 h-12 text-slate-400" />
+          <div className="w-24 h-24 mx-auto mb-8 bg-gray-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+            <Upload className="w-12 h-12 text-gray-400 dark:text-slate-400" />
           </div>
           
           {/* Main Text */}
-          <h2 className="text-2xl font-medium text-gray-100 mb-4">
+          <h2 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-4">
             Add a source to get started
           </h2>
           
           {/* Upload Button */}
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+            className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
           >
             <Upload className="w-5 h-5" />
             <span>Upload a source</span>
           </button>
           
           {/* Helper text */}
-          <p className="text-sm text-slate-400 mt-6 leading-relaxed">
+          <p className="text-sm text-gray-600 dark:text-slate-400 mt-6 leading-relaxed">
             Saved sources will appear here<br />
             Click Add source above to add PDFs, websites, text, videos, or audio files.<br />
             Or import a file directly from Google Drive.
@@ -144,7 +151,41 @@ const ChatPanel: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-900">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900 relative">
+      {/* Floating Sources Expand Button */}
+      {sourcesPanelState === 'collapsed' && onExpandSources && (
+        <button
+          onClick={onExpandSources}
+          className="absolute top-4 left-4 z-10 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-2 shadow-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group"
+          title="Show Sources"
+        >
+          <div className="flex items-center space-x-2">
+            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <FileText className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <span className="text-sm text-gray-600 dark:text-slate-400 hidden group-hover:block">
+              Sources
+            </span>
+          </div>
+        </button>
+      )}
+
+      {/* Floating Studio Expand Button */}
+      {studioPanelState === 'collapsed' && onExpandStudio && (
+        <button
+          onClick={onExpandStudio}
+          className="absolute top-4 right-4 z-10 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-2 shadow-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group"
+          title="Show Studio"
+        >
+          <div className="flex items-center space-x-2">
+            <Settings className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <span className="text-sm text-gray-600 dark:text-slate-400 hidden group-hover:block">
+              Studio
+            </span>
+          </div>
+        </button>
+      )}
+      
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -153,7 +194,7 @@ const ChatPanel: React.FC = () => {
               <div className={`max-w-[80%] ${
                 message.isUser 
                   ? 'bg-blue-600 text-white' 
-                  : 'bg-slate-800 text-gray-100'
+                  : 'bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-slate-600'
               } rounded-2xl px-4 py-3`}>
                 <p className="text-sm leading-relaxed">{message.content}</p>
               </div>
@@ -164,10 +205,10 @@ const ChatPanel: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-slate-700 p-4">
+      <div className="border-t border-gray-200 dark:border-slate-700 p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-2 text-xs text-slate-500 mb-3">
-            <span>NotebookLM can be inaccurate, please double check its responses.</span>
+          <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-slate-500 mb-3">
+            <span>Elenchus...</span>
             <span>•</span>
             <span>{sources.length} sources</span>
           </div>
@@ -183,7 +224,7 @@ const ChatPanel: React.FC = () => {
                   onFocus={() => setIsChatInputFocused(true)}
                   onBlur={() => setIsChatInputFocused(false)}
                   placeholder="Ask me anything about your sources..."
-                  className="w-full bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 pr-12 text-gray-100 placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
+                  className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-2xl px-4 py-3 pr-12 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32"
                   rows={1}
                   style={{ minHeight: '48px' }}
                 />
@@ -191,7 +232,7 @@ const ChatPanel: React.FC = () => {
                 {/* Attachment Button */}
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
                 >
                   <Paperclip className="w-4 h-4" />
                 </button>
@@ -205,7 +246,7 @@ const ChatPanel: React.FC = () => {
                 className={`p-3 rounded-full transition-colors ${
                   isListening 
                     ? 'bg-red-600 text-white' 
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'
                 }`}
               >
                 <Mic className="w-5 h-5" />
@@ -218,7 +259,7 @@ const ChatPanel: React.FC = () => {
                 className={`p-3 rounded-full transition-colors ${
                   inputValue.trim()
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600 cursor-not-allowed'
                 }`}
               >
                 <Send className="w-5 h-5" />

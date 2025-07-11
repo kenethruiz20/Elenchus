@@ -1,0 +1,99 @@
+/* Custom styles for Quill editor to work with dark mode */
+.ql-editor {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Dark mode styles */
+.dark .ql-toolbar {
+  background-color: rgb(55, 65, 81);
+  border-color: rgb(75, 85, 99);
+}
+
+.dark .ql-toolbar button {
+  color: rgb(156, 163, 175);
+}
+
+.dark .ql-toolbar button:hover {
+  color: rgb(229, 231, 235);
+}
+
+.dark .ql-toolbar button.ql-active {
+  color: rgb(96, 165, 250);
+}
+
+.dark .ql-stroke {
+  stroke: rgb(156, 163, 175);
+}
+
+.dark .ql-stroke:hover {
+  stroke: rgb(229, 231, 235);
+}
+
+.dark .ql-fill {
+  fill: rgb(156, 163, 175);
+}
+
+.dark .ql-fill:hover {
+  fill: rgb(229, 231, 235);
+}
+
+.dark .ql-container {
+  background-color: rgb(31, 41, 55);
+  border-color: rgb(75, 85, 99);
+}
+
+.dark .ql-editor {
+  color: rgb(229, 231, 235);
+}
+
+.dark .ql-editor.ql-blank::before {
+  color: rgb(107, 114, 128);
+}
+
+.dark .ql-tooltip {
+  background-color: rgb(55, 65, 81);
+  border-color: rgb(75, 85, 99);
+  color: rgb(229, 231, 235);
+}
+
+.dark .ql-tooltip input {
+  background-color: rgb(31, 41, 55);
+  border-color: rgb(75, 85, 99);
+  color: rgb(229, 231, 235);
+}
+
+.dark .ql-picker-options {
+  background-color: rgb(55, 65, 81);
+  border-color: rgb(75, 85, 99);
+}
+
+.dark .ql-picker-item {
+  color: rgb(229, 231, 235);
+}
+
+.dark .ql-picker-item:hover {
+  background-color: rgb(75, 85, 99);
+}
+
+/* Light mode adjustments */
+.ql-container {
+  background-color: white;
+  border-color: rgb(209, 213, 219);
+}
+
+.ql-toolbar {
+  background-color: rgb(249, 250, 251);
+  border-color: rgb(209, 213, 219);
+}
+
+/* Custom height adjustments */
+.quill-editor-container .ql-container {
+  height: calc(100% - 42px);
+}
+
+.quill-editor-container .ql-editor {
+  height: 100%;
+  overflow-y: auto;
+}

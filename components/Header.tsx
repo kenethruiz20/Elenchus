@@ -22,7 +22,7 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="h-14 bg-slate-800 dark:bg-slate-800 bg-white border-b border-slate-700 dark:border-slate-700 border-gray-200 flex items-center justify-between px-4">
+    <header className="h-14 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-4">
       {/* Left side - Back button and Title */}
       <div className="flex items-center space-x-3">
         <Link 

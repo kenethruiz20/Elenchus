@@ -21,7 +21,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
+      <nav className="fixed top-0 w-full bg-gray-50/80 backdrop-blur-md border-b border-gray-100 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -49,7 +49,7 @@ export default function LandingPage() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-b">
+          <div className="md:hidden bg-gray-50 border-b">
             <div className="px-2 pt-2 pb-3 space-y-1">
               <a href="#features" className="block px-3 py-2 text-gray-700 hover:text-blue-600">Features</a>
               <a href="#how-it-works" className="block px-3 py-2 text-gray-700 hover:text-blue-600">How it Works</a>
@@ -82,7 +82,7 @@ export default function LandingPage() {
                 Start Research Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-              <button className="inline-flex items-center px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition hover:scale-105 transform">
+              <button className="inline-flex items-center px-6 py-3 bg-gray-50 text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition hover:scale-105 transform">
                 Watch Demo
               </button>
             </div>
@@ -91,7 +91,7 @@ export default function LandingPage() {
           {/* Hero Image Placeholder */}
           <div className="mt-16 relative animate-scaleIn animation-delay-600">
             <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-shadow">
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="bg-gray-50 rounded-lg shadow-lg p-6">
                 <div className="flex items-center mb-4">
                   <FileText className="h-6 w-6 text-blue-600 mr-2" />
                   <span className="font-semibold">Legal Document Analysis</span>
@@ -120,7 +120,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 transform">
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 transform">
               <Search className="h-12 w-12 text-blue-600 mb-4" />
               <h3 className="text-xl font-semibold mb-3">Intelligent Case Search</h3>
               <p className="text-gray-600">
@@ -128,7 +128,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 transform">
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 transform">
               <BookOpen className="h-12 w-12 text-blue-600 mb-4" />
               <h3 className="text-xl font-semibold mb-3">Document Analysis</h3>
               <p className="text-gray-600">
@@ -136,7 +136,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 transform">
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 transform">
               <Briefcase className="h-12 w-12 text-blue-600 mb-4" />
               <h3 className="text-xl font-semibold mb-3">Brief Generation</h3>
               <p className="text-gray-600">
@@ -206,7 +206,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-sm">
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm">
               <div className="flex items-start mb-4">
                 <Shield className="h-8 w-8 text-blue-600 mr-3 flex-shrink-0" />
                 <div>
@@ -228,7 +228,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm">
+            <div className="bg-gray-50 p-8 rounded-xl shadow-sm">
               <div className="flex items-start mb-4">
                 <FileText className="h-8 w-8 text-blue-600 mr-3 flex-shrink-0" />
                 <div>
@@ -264,7 +264,7 @@ export default function LandingPage() {
           </p>
           <Link 
             href="/app" 
-            className="inline-flex items-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition"
+            className="inline-flex items-center px-8 py-4 bg-gray-50 text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition"
           >
             Get Started Free
             <ArrowRight className="ml-2 h-5 w-5" />

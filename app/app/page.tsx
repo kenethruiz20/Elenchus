@@ -115,14 +115,14 @@ export default function NotebookOverview() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 dark:bg-gray-900 bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-gray-800 dark:bg-gray-800 bg-white border-b border-gray-700 dark:border-gray-700 border-gray-200">
+      <header className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center">
               <Scale className="h-8 w-8 text-blue-500" />
-              <span className="ml-2 text-xl font-semibold text-white">Elenchus AI</span>
+              <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">Elenchus AI</span>
             </Link>
             <div className="flex items-center space-x-4">
               <button className="p-2 hover:bg-gray-700 rounded-lg transition">
@@ -204,8 +204,8 @@ export default function NotebookOverview() {
         <div className="max-w-7xl mx-auto">
           {/* Welcome Section */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white dark:text-white text-gray-900 mb-2">Welcome to Elenchus AI</h1>
-            <p className="text-gray-400 dark:text-gray-400 text-gray-600">Your AI-powered legal research assistant</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Welcome to Elenchus AI</h1>
+            <p className="text-gray-600 dark:text-gray-400">Your AI-powered legal research assistant</p>
           </div>
 
           {/* Actions Bar */}
@@ -219,22 +219,22 @@ export default function NotebookOverview() {
             </Link>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-gray-800 rounded-lg p-1">
+              <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gray-700 dark:bg-gray-700 bg-gray-200' : 'hover:bg-gray-700 dark:hover:bg-gray-700 hover:bg-gray-200'} transition`}
+                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gray-50 shadow-sm dark:bg-gray-700' : 'hover:bg-gray-200 dark:hover:bg-gray-700'} transition`}
                 >
-                  <Grid3X3 className="h-4 w-4 text-gray-300 dark:text-gray-300 text-gray-600" />
+                  <Grid3X3 className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 rounded ${viewMode === 'list' ? 'bg-gray-700 dark:bg-gray-700 bg-gray-200' : 'hover:bg-gray-700 dark:hover:bg-gray-700 hover:bg-gray-200'} transition`}
                 >
-                  <List className="h-4 w-4 text-gray-300 dark:text-gray-300 text-gray-600" />
+                  <List className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                 </button>
               </div>
 
-              <button className="inline-flex items-center px-3 py-2 bg-gray-800 dark:bg-gray-800 bg-white text-gray-300 dark:text-gray-300 text-gray-700 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-700 hover:bg-gray-100 transition">
+              <button className="inline-flex items-center px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                 Most recent
                 <ChevronDown className="h-4 w-4 ml-2" />
               </button>
@@ -248,7 +248,7 @@ export default function NotebookOverview() {
                 <Link
                   key={notebook.id}
                   href={`/research?id=${notebook.id}`}
-                  className="bg-gray-800 dark:bg-gray-800 bg-white rounded-lg p-6 hover:bg-gray-750 dark:hover:bg-gray-750 hover:bg-gray-50 transition-all hover:scale-105 transform cursor-pointer"
+                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all hover:scale-105 transform cursor-pointer shadow-sm hover:shadow-md"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="text-4xl">{notebook.icon}</div>
@@ -262,8 +262,8 @@ export default function NotebookOverview() {
                       <MoreVertical className="h-4 w-4 text-gray-400 dark:text-gray-400 text-gray-600" />
                     </button>
                   </div>
-                  <h3 className="text-white dark:text-white text-gray-900 font-semibold mb-2 line-clamp-2">{notebook.title}</h3>
-                  <div className="flex items-center justify-between text-sm text-gray-400 dark:text-gray-400 text-gray-600">
+                  <h3 className="text-gray-900 dark:text-white font-semibold mb-2 line-clamp-2">{notebook.title}</h3>
+                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                     <span>{notebook.date}</span>
                     <span>{notebook.sources} source{notebook.sources !== 1 ? 's' : ''}</span>
                   </div>
@@ -271,19 +271,19 @@ export default function NotebookOverview() {
               ))}
             </div>
           ) : (
-            <div className="bg-gray-800 dark:bg-gray-800 bg-white rounded-lg overflow-hidden">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
               {notebooks.map((notebook, index) => (
                 <Link
                   key={notebook.id}
                   href={`/research?id=${notebook.id}`}
-                  className={`flex items-center p-4 hover:bg-gray-700 dark:hover:bg-gray-700 hover:bg-gray-50 transition ${
-                    index !== notebooks.length - 1 ? 'border-b border-gray-700 dark:border-gray-700 border-gray-200' : ''
+                  className={`flex items-center p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${
+                    index !== notebooks.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
                   }`}
                 >
                   <div className="text-2xl mr-4">{notebook.icon}</div>
                   <div className="flex-1">
-                    <h3 className="text-white dark:text-white text-gray-900 font-semibold">{notebook.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-400 dark:text-gray-400 text-gray-600 mt-1">
+                    <h3 className="text-gray-900 dark:text-white font-semibold">{notebook.title}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
                       <span>{notebook.date}</span>
                       <span>•</span>
                       <span>{notebook.sources} sources</span>
@@ -295,7 +295,7 @@ export default function NotebookOverview() {
                     </div>
                   </div>
                   <button 
-                    className="p-2 hover:bg-gray-600 dark:hover:bg-gray-600 hover:bg-gray-100 rounded transition ml-4"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition ml-4"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -309,15 +309,15 @@ export default function NotebookOverview() {
           )}
 
           {/* Quick Start Guide */}
-          <div className="mt-12 bg-gray-800 rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-white mb-4">Quick Start Guide</h2>
+          <div className="mt-12 bg-gray-100 dark:bg-gray-800 rounded-lg p-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Quick Start Guide</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <div className="bg-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-3">
                   <FileText className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-white font-semibold mb-2">Upload Documents</h3>
-                <p className="text-gray-400 text-sm">
+                <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Upload Documents</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Start by uploading case files, contracts, briefs, or any legal documents you need to analyze.
                 </p>
               </div>
@@ -325,8 +325,8 @@ export default function NotebookOverview() {
                 <div className="bg-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-3">
                   <Search className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-white font-semibold mb-2">Ask Questions</h3>
-                <p className="text-gray-400 text-sm">
+                <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Ask Questions</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Query your documents naturally. Get summaries, find precedents, or explore legal concepts.
                 </p>
               </div>
@@ -334,8 +334,8 @@ export default function NotebookOverview() {
                 <div className="bg-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-3">
                   <Briefcase className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-white font-semibold mb-2">Build Your Case</h3>
-                <p className="text-gray-400 text-sm">
+                <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Build Your Case</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Generate briefs, create timelines, and organize your research into compelling legal arguments.
                 </p>
               </div>

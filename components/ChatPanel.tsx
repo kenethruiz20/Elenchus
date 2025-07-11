@@ -1,10 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Paperclip, Mic } from 'lucide-react';
+import { Send, Upload, Paperclip, Mic, ChevronRight, FileText } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
-const ChatPanel: React.FC = () => {
+interface ChatPanelProps {
+  sourcesPanelState?: 'normal' | 'expanded' | 'collapsed';
+  onExpandSources?: () => void;
+}
+
+const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources }) => {
   const { 
     sources, 
     chatMessages, 
@@ -144,7 +149,24 @@ const ChatPanel: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900 relative">
+      {/* Floating Sources Expand Button */}
+      {sourcesPanelState === 'collapsed' && onExpandSources && (
+        <button
+          onClick={onExpandSources}
+          className="absolute top-4 left-4 z-10 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-2 shadow-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group"
+          title="Show Sources"
+        >
+          <div className="flex items-center space-x-2">
+            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <FileText className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <span className="text-sm text-gray-600 dark:text-slate-400 hidden group-hover:block">
+              Sources
+            </span>
+          </div>
+        </button>
+      )}
+      
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">

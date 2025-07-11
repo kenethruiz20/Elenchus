@@ -1,12 +1,44 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { Plus, Search, FileText, Upload, X } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Plus, Search, FileText, Upload, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import SourceDetails from './SourceDetails';
 
-const SourcesPanel: React.FC = () => {
+interface SourcesPanelProps {
+  panelState: 'normal' | 'expanded' | 'collapsed';
+  onPanelStateChange: (state: 'normal' | 'expanded' | 'collapsed') => void;
+}
+
+const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateChange }) => {
   const { sources, addSource, removeSource } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+
+  // Handle panel state changes when source is selected/deselected
+  useEffect(() => {
+    if (selectedSource && panelState === 'normal') {
+      onPanelStateChange('expanded');
+    } else if (!selectedSource && panelState === 'expanded') {
+      onPanelStateChange('normal');
+    }
+  }, [selectedSource, panelState, onPanelStateChange]);
+
+  const handleSourceSelect = (sourceId: string) => {
+    setSelectedSource(sourceId);
+  };
+
+  const handleSourceClose = () => {
+    setSelectedSource(null);
+  };
+
+  const togglePanel = () => {
+    if (panelState === 'collapsed') {
+      onPanelStateChange('normal');
+    } else {
+      onPanelStateChange('collapsed');
+    }
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -40,11 +72,49 @@ const SourcesPanel: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const selectedSourceData = selectedSource ? sources.find(s => s.id === selectedSource) : null;
+
+  // Handle collapsed state
+  if (panelState === 'collapsed') {
+    return (
+      <div className="h-full bg-gray-50 dark:bg-slate-800/50 border-r border-gray-200 dark:border-slate-700">
+        <div className="p-2 border-b border-gray-200 dark:border-slate-700">
+          <button
+            onClick={togglePanel}
+            className="w-full p-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            title="Expand Sources"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedSourceData) {
+    return (
+      <SourceDetails 
+        source={selectedSourceData} 
+        onClose={handleSourceClose}
+        onCollapse={togglePanel}
+      />
+    );
+  }
+
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-800/50">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Sources</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Sources</h2>
+          <button
+            onClick={togglePanel}
+            className="p-1 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            title="Collapse Sources"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
         
         {/* Action Buttons */}
         <div className="space-y-2">
@@ -86,7 +156,11 @@ const SourcesPanel: React.FC = () => {
         ) : (
           <div className="p-4 space-y-3">
             {sources.map((source) => (
-              <div key={source.id} className="group bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg p-3 transition-colors">
+              <div 
+                key={source.id} 
+                className="group bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg p-3 transition-colors cursor-pointer"
+                onClick={() => handleSourceSelect(source.id)}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     <div className="w-8 h-8 bg-gray-200 dark:bg-slate-600 rounded flex items-center justify-center flex-shrink-0">
@@ -101,7 +175,10 @@ const SourcesPanel: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => removeSource(source.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSource(source.id);
+                    }}
                     className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-all"
                   >
                     <X className="w-4 h-4" />

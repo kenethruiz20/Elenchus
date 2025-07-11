@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Paperclip, Mic, ChevronRight, FileText } from 'lucide-react';
+import { Send, Upload, Paperclip, Mic, ChevronRight, FileText, ChevronLeft, Settings } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface ChatPanelProps {
   sourcesPanelState?: 'normal' | 'expanded' | 'collapsed';
   onExpandSources?: () => void;
+  studioPanelState?: 'normal' | 'collapsed';
+  onExpandStudio?: () => void;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources, studioPanelState, onExpandStudio }) => {
   const { 
     sources, 
     chatMessages, 
@@ -162,6 +164,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
             <FileText className="w-4 h-4 text-gray-600 dark:text-slate-400" />
             <span className="text-sm text-gray-600 dark:text-slate-400 hidden group-hover:block">
               Sources
+            </span>
+          </div>
+        </button>
+      )}
+
+      {/* Floating Studio Expand Button */}
+      {studioPanelState === 'collapsed' && onExpandStudio && (
+        <button
+          onClick={onExpandStudio}
+          className="absolute top-4 right-4 z-10 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-2 shadow-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors group"
+          title="Show Studio"
+        >
+          <div className="flex items-center space-x-2">
+            <Settings className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+            <span className="text-sm text-gray-600 dark:text-slate-400 hidden group-hover:block">
+              Studio
             </span>
           </div>
         </button>

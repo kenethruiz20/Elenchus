@@ -8,6 +8,7 @@ import StudioPanel from '@/components/StudioPanel';
 
 export default function Home() {
   const [sourcesPanelState, setSourcesPanelState] = useState<'normal' | 'expanded' | 'collapsed'>('normal');
+  const [studioPanelState, setStudioPanelState] = useState<'normal' | 'collapsed'>('normal');
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
@@ -18,7 +19,7 @@ export default function Home() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Sources */}
         <div className={`flex-shrink-0 border-r border-gray-200 dark:border-slate-700 transition-all duration-300 ease-in-out ${
-          sourcesPanelState === 'collapsed' ? 'w-0 opacity-0' : 
+          sourcesPanelState === 'collapsed' ? 'w-12' : 
           sourcesPanelState === 'expanded' ? 'w-96' : 'w-80'
         }`}>
           <SourcesPanel 
@@ -32,12 +33,19 @@ export default function Home() {
           <ChatPanel 
             sourcesPanelState={sourcesPanelState}
             onExpandSources={() => setSourcesPanelState('normal')}
+            studioPanelState={studioPanelState}
+            onExpandStudio={() => setStudioPanelState('normal')}
           />
         </div>
         
         {/* Right Panel - Studio */}
-        <div className="w-80 flex-shrink-0 border-l border-gray-200 dark:border-slate-700">
-          <StudioPanel />
+        <div className={`flex-shrink-0 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 ease-in-out ${
+          studioPanelState === 'collapsed' ? 'w-12' : 'w-80'
+        }`}>
+          <StudioPanel 
+            panelState={studioPanelState}
+            onPanelStateChange={setStudioPanelState}
+          />
         </div>
       </div>
     </div>

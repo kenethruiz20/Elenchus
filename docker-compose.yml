@@ -1,0 +1,111 @@
+# Docker Compose for Elenchus Legal AI Full Stack
+
+services:
+  # MongoDB Database
+  mongodb:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.mongodb
+    container_name: elenchus-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: elenchus_admin
+      MONGO_INITDB_ROOT_PASSWORD: elenchus_password_2024
+      MONGO_INITDB_DATABASE: elenchus
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/docker/mongo-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - elenchus-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.backend
+    container_name: elenchus-backend
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://elenchus_user:elenchus_app_password@mongodb:27017/elenchus
+      - MONGODB_DATABASE=elenchus
+      - SECRET_KEY=your-super-secret-key-at-least-32-characters-long-docker
+      - DEBUG=false
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - BACKEND_CORS_ORIGINS=["http://localhost:3001","http://frontend:3000"]
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - elenchus-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: elenchus-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - NODE_ENV=production
+    ports:
+      - "3001:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - elenchus-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: elenchus-redis
+    restart: unless-stopped
+    command: redis-server --requirepass elenchus_redis_password
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - elenchus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  elenchus-network:
+    driver: bridge
+    name: elenchus-network
+
+volumes:
+  mongodb_data:
+    name: elenchus_mongodb_data
+  redis_data:
+    name: elenchus_redis_data

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
+import { getApiUrl, config } from '../lib/config';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -65,8 +66,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setError(null);
 
     const endpoint = activeTab === 'signup' 
-      ? 'http://localhost:8001/api/v1/auth/register'
-      : 'http://localhost:8001/api/v1/auth/login';
+      ? getApiUrl(config.api.endpoints.auth.register)
+      : getApiUrl(config.api.endpoints.auth.login);
 
     const payload = activeTab === 'signup'
       ? { email, password, first_name: firstName, last_name: lastName }

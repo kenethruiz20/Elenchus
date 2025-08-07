@@ -43,7 +43,10 @@
       "Bash(/Users/amadrazo/Desktop/dev/legalai/Elenchus/test-auth-flow.sh)",
       "Bash(grep:*)",
       "Bash(mv:*)",
-      "Bash(/Users/amadrazo/Desktop/dev/legalai/Elenchus/test-final-auth-fix.sh:*)"
+      "Bash(/Users/amadrazo/Desktop/dev/legalai/Elenchus/test-final-auth-fix.sh:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(./tests/test-dev-setup.sh:*)"
     ],
     "deny": []
   }

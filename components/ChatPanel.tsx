@@ -9,9 +9,10 @@ interface ChatPanelProps {
   onExpandSources?: () => void;
   studioPanelState?: 'normal' | 'collapsed';
   onExpandStudio?: () => void;
+  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => string;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources, studioPanelState, onExpandStudio }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources, studioPanelState, onExpandStudio, onEnsureSession }) => {
   const { 
     sources, 
     chatMessages, 
@@ -37,6 +38,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
 
   const handleSendMessage = async () => {
     if (inputValue.trim()) {
+      // Ensure session exists before sending message
+      onEnsureSession('message');
+      
       addChatMessage(inputValue.trim(), true);
       const userMessage = inputValue.trim();
       setInputValue('');

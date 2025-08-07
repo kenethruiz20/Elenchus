@@ -18,7 +18,6 @@ __pycache__/
 .chainlit/
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -69,6 +68,7 @@ yarn-error.log*
 # Local env files
 .env*.local
 .env
+.env.local
 
 # Vercel
 .vercel
@@ -76,12 +76,6 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
-# IDE
-.vscode/
-.idea/
-
-# OS
-Thumbs.db
 
 
 # Logs

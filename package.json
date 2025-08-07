@@ -5,7 +5,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "dev:debug": "NODE_OPTIONS='--inspect' next dev",
+    "dev:full": "./devrun.sh",
+    "dev:full:js": "node devrun.js",
+    "dev:8001": "NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev",
+    "test": "cd tests && ./test-auth-flow.sh",
+    "test:routing": "cd tests && ./test-auth-routing.sh",
+    "test:build": "cd tests && ./quick-build-test.sh",
+    "test:setup": "./tests/test-dev-setup.sh",
+    "docker:up": "docker-compose up mongodb redis -d",
+    "docker:down": "docker-compose down",
+    "logs:frontend": "tail -f logs/frontend.log",
+    "logs:backend": "tail -f logs/backend.log",
+    "logs:both": "tail -f logs/frontend.log logs/backend.log"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",

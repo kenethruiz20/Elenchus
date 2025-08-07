@@ -6,10 +6,13 @@ import SourcesPanel from '@/components/SourcesPanel';
 import ChatPanel from '@/components/ChatPanel';
 import StudioPanel from '@/components/StudioPanel';
 import AuthProtection from '@/components/AuthProtection';
+import { useSessionManager } from '@/hooks/useSessionManager';
 
 function ResearchPageContent() {
   const [sourcesPanelState, setSourcesPanelState] = useState<'normal' | 'expanded' | 'collapsed'>('normal');
   const [studioPanelState, setStudioPanelState] = useState<'normal' | 'collapsed'>('normal');
+  
+  const { currentSession, ensureSession } = useSessionManager();
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
@@ -26,6 +29,7 @@ function ResearchPageContent() {
           <SourcesPanel 
             panelState={sourcesPanelState}
             onPanelStateChange={setSourcesPanelState}
+            onEnsureSession={ensureSession}
           />
         </div>
         
@@ -36,6 +40,7 @@ function ResearchPageContent() {
             onExpandSources={() => setSourcesPanelState('normal')}
             studioPanelState={studioPanelState}
             onExpandStudio={() => setStudioPanelState('normal')}
+            onEnsureSession={ensureSession}
           />
         </div>
         
@@ -46,6 +51,7 @@ function ResearchPageContent() {
           <StudioPanel 
             panelState={studioPanelState}
             onPanelStateChange={setStudioPanelState}
+            onEnsureSession={ensureSession}
           />
         </div>
       </div>

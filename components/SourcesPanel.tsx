@@ -9,9 +9,10 @@ import DiscoverModal from './DiscoverModal';
 interface SourcesPanelProps {
   panelState: 'normal' | 'expanded' | 'collapsed';
   onPanelStateChange: (state: 'normal' | 'expanded' | 'collapsed') => void;
+  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => string;
 }
 
-const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateChange }) => {
+const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateChange, onEnsureSession }) => {
   const { sources, addSource, removeSource } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
@@ -45,6 +46,9 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
+      // Ensure session exists before adding sources
+      onEnsureSession('source', 'Document Analysis');
+      
       Array.from(files).forEach(file => {
         const fileType = file.type;
         let sourceType: 'pdf' | 'doc' | 'txt' | 'url' = 'txt';

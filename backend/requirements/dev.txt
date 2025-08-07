@@ -15,3 +15,4 @@ mypy==1.7.1
 # Development Tools
 watchfiles==0.21.0
 python-dotenv==1.0.0
+debugpy==1.8.0

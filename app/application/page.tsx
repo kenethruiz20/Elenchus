@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
+import { ResearchSession } from '@/store/useStore';
 import AuthProtection from '@/components/AuthProtection';
 import { 
   Plus,
@@ -28,22 +29,106 @@ import {
 import { useTheme } from '@/app/context/ThemeContext';
 import Footer from '@/components/Footer';
 
-interface Notebook {
-  id: string;
-  title: string;
-  date: string;
-  sources: number;
-  icon: string;
-  type: 'case' | 'contract' | 'brief' | 'research';
+interface CreateSessionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateSession: (title: string, type: ResearchSession['type']) => void;
+}
+
+function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionModalProps) {
+  const [title, setTitle] = useState('');
+  const [selectedType, setSelectedType] = useState<ResearchSession['type']>('research');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (title.trim()) {
+      onCreateSession(title.trim(), selectedType);
+      setTitle('');
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          Create New Research Session
+        </h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Session Title
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter session title..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              autoFocus
+            />
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Session Type
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { type: 'research' as const, icon: '📚', label: 'Research' },
+                { type: 'case' as const, icon: '⚖️', label: 'Case Analysis' },
+                { type: 'contract' as const, icon: '📑', label: 'Contract Review' },
+                { type: 'brief' as const, icon: '📝', label: 'Brief Writing' }
+              ].map(({ type, icon, label }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSelectedType(type)}
+                  className={`p-3 border rounded-lg text-left transition ${
+                    selectedType === type
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                      : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <div className="text-xl mb-1">{icon}</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+            >
+              Create Session
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function NotebookOverviewContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('recent');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useStore();
+  const { user, logout, researchSessions, createSession, setCurrentSession } = useStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -56,56 +141,38 @@ function NotebookOverviewContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const notebooks: Notebook[] = [
-    {
-      id: '1',
-      title: 'Smith v. Johnson Appeal',
-      date: 'Jun 19, 2025',
-      sources: 12,
-      icon: '⚖️',
-      type: 'case'
-    },
-    {
-      id: '2',
-      title: 'Contract Review - Tech Merger',
-      date: 'Jun 27, 2025',
-      sources: 8,
-      icon: '📑',
-      type: 'contract'
-    },
-    {
-      id: '3',
-      title: 'Employment Law Research',
-      date: 'Jun 27, 2025',
-      sources: 15,
-      icon: '📚',
-      type: 'research'
-    },
-    {
-      id: '4',
-      title: 'Motion to Dismiss Brief',
-      date: 'Jun 27, 2025',
-      sources: 6,
-      icon: '📝',
-      type: 'brief'
-    },
-    {
-      id: '5',
-      title: 'Real Estate Closing Docs',
-      date: 'Jun 25, 2025',
-      sources: 10,
-      icon: '🏠',
-      type: 'contract'
-    },
-    {
-      id: '6',
-      title: 'Criminal Defense Strategy',
-      date: 'Jun 24, 2025',
-      sources: 14,
-      icon: '🛡️',
-      type: 'case'
+  // Sort and filter research sessions
+  const sortedSessions = [...researchSessions].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime();
+      case 'name':
+        return a.title.localeCompare(b.title);
+      case 'created':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      default:
+        return 0;
     }
-  ];
+  });
+
+  const handleCreateSession = (title: string, type: ResearchSession['type']) => {
+    const sessionId = createSession(title, type);
+    // Redirect to research page with the new session
+    window.location.href = `/research?id=${sessionId}`;
+  };
+
+  const handleSessionClick = (sessionId: string) => {
+    setCurrentSession(sessionId);
+    window.location.href = `/research?id=${sessionId}`;
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const getTypeIcon = (type: string) => {
     switch(type) {
@@ -218,13 +285,13 @@ function NotebookOverviewContent() {
 
           {/* Actions Bar */}
           <div className="flex items-center justify-between mb-6">
-            <Link 
-              href="/research"
+            <button 
+              onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
               <Plus className="h-5 w-5 mr-2" />
               Create new
-            </Link>
+            </button>
 
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
@@ -249,70 +316,91 @@ function NotebookOverviewContent() {
             </div>
           </div>
 
-          {/* Notebooks Grid */}
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {notebooks.map((notebook) => (
-                <Link
-                  key={notebook.id}
-                  href={`/research?id=${notebook.id}`}
-                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all hover:scale-105 transform cursor-pointer shadow-sm hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-4xl">{notebook.icon}</div>
+          {/* Research Sessions Grid */}
+          {sortedSessions.length > 0 ? (
+            viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {sortedSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    onClick={() => handleSessionClick(session.id)}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all hover:scale-105 transform cursor-pointer shadow-sm hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="text-4xl">{session.icon}</div>
+                      <button 
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // TODO: Add context menu for session options
+                        }}
+                      >
+                        <MoreVertical className="h-4 w-4 text-gray-400" />
+                      </button>
+                    </div>
+                    <h3 className="text-gray-900 dark:text-white font-semibold mb-2 line-clamp-2">{session.title}</h3>
+                    <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                      <span>{formatDate(session.lastAccessed)}</span>
+                      <span>{session.sources.length} source{session.sources.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                {sortedSessions.map((session, index) => (
+                  <div
+                    key={session.id}
+                    onClick={() => handleSessionClick(session.id)}
+                    className={`flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer ${
+                      index !== sortedSessions.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
+                    }`}
+                  >
+                    <div className="text-2xl mr-4">{session.icon}</div>
+                    <div className="flex-1">
+                      <h3 className="text-gray-900 dark:text-white font-semibold">{session.title}</h3>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <span>{formatDate(session.lastAccessed)}</span>
+                        <span>•</span>
+                        <span>{session.sources.length} sources</span>
+                        <span>•</span>
+                        <div className="flex items-center">
+                          {getTypeIcon(session.type)}
+                          <span className="ml-1 capitalize">{session.type}</span>
+                        </div>
+                      </div>
+                    </div>
                     <button 
-                      className="p-1 hover:bg-gray-700 rounded transition"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition ml-4"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        // TODO: Add context menu for session options
                       }}
                     >
-                      <MoreVertical className="h-4 w-4 text-gray-400 dark:text-gray-400 text-gray-600" />
+                      <MoreVertical className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
-                  <h3 className="text-gray-900 dark:text-white font-semibold mb-2 line-clamp-2">{notebook.title}</h3>
-                  <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>{notebook.date}</span>
-                    <span>{notebook.sources} source{notebook.sources !== 1 ? 's' : ''}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           ) : (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
-              {notebooks.map((notebook, index) => (
-                <Link
-                  key={notebook.id}
-                  href={`/research?id=${notebook.id}`}
-                  className={`flex items-center p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${
-                    index !== notebooks.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
-                  }`}
-                >
-                  <div className="text-2xl mr-4">{notebook.icon}</div>
-                  <div className="flex-1">
-                    <h3 className="text-gray-900 dark:text-white font-semibold">{notebook.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      <span>{notebook.date}</span>
-                      <span>•</span>
-                      <span>{notebook.sources} sources</span>
-                      <span>•</span>
-                      <div className="flex items-center">
-                        {getTypeIcon(notebook.type)}
-                        <span className="ml-1 capitalize">{notebook.type}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button 
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition ml-4"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                  >
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
-                  </button>
-                </Link>
-              ))}
+            <div className="text-center py-12">
+              <div className="text-gray-400 dark:text-gray-500 mb-4">
+                <FileText className="h-16 w-16 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">No research sessions yet</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Create your first research session to get started with legal document analysis.
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition mt-4"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create your first session
+              </button>
             </div>
           )}
 
@@ -354,6 +442,13 @@ function NotebookOverviewContent() {
       
       {/* Footer */}
       <Footer />
+      
+      {/* Create Session Modal */}
+      <CreateSessionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateSession={handleCreateSession}
+      />
     </div>
   );
 }

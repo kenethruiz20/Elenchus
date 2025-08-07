@@ -23,9 +23,10 @@ import NoteEditor from './NoteEditor';
 interface StudioPanelProps {
   panelState: 'normal' | 'collapsed';
   onPanelStateChange: (state: 'normal' | 'collapsed') => void;
+  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => string;
 }
 
-const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChange }) => {
+const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChange, onEnsureSession }) => {
   const { 
     notes, 
     addNote, 
@@ -129,6 +130,9 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
         content
       });
     } else {
+      // Ensure session exists before creating new note
+      onEnsureSession('note', title);
+      
       // Create new note
       addNote({
         title,

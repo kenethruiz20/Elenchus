@@ -1,0 +1,55 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🐛 Debug Backend",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/backend",
+                    "remoteRoot": "/workspace/backend"
+                }
+            ],
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "presentation": {
+                "group": "debug",
+                "order": 1
+            }
+        },
+        {
+            "name": "🚀 Debug Frontend",
+            "type": "node",
+            "request": "attach",
+            "port": 9229,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "${workspaceFolder}",
+            "protocol": "inspector",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "presentation": {
+                "group": "debug",
+                "order": 2
+            }
+        },
+        {
+            "name": "🔧 Debug Both (Backend + Frontend)",
+            "type": "compound",
+            "configurations": [
+                "🐛 Debug Backend",
+                "🚀 Debug Frontend"
+            ],
+            "presentation": {
+                "group": "debug",
+                "order": 3
+            }
+        }
+    ]
+}

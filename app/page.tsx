@@ -300,7 +300,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white transition">Documentation</a></li>
                 <li><a href="#" className="hover:text-white transition">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition">Support</a></li>
+                <li><Link href="/faq" className="hover:text-white transition">FAQ</Link></li>
               </ul>
             </div>
             
@@ -308,7 +308,7 @@ export default function LandingPage() {
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white transition">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition">Terms of Service</a></li>
+                <li><Link href="/terms" className="hover:text-white transition">Terms of Service</Link></li>
                 <li><a href="#" className="hover:text-white transition">Bar Compliance</a></li>
               </ul>
             </div>

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     
     # Database - MongoDB
-    MONGODB_URL: str = Field("mongodb://elenchus_user:elenchus_app_password@localhost:27017/elenchus", env="MONGODB_URL")
+    MONGODB_URL: str = Field("mongodb://elenchus_admin:elenchus_password_2024@localhost:27018/elenchus", env="MONGODB_URL")
     MONGODB_DATABASE: str = Field("elenchus", env="MONGODB_DATABASE")
     
     # Redis Cache
@@ -39,6 +39,11 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:3001",
     ]
+    
+    # Langfuse Tracing
+    LANGFUSE_SECRET_KEY: Optional[str] = Field(None, env="LANGFUSE_SECRET_KEY")
+    LANGFUSE_PUBLIC_KEY: Optional[str] = Field(None, env="LANGFUSE_PUBLIC_KEY")
+    LANGFUSE_HOST: str = Field("https://cloud.langfuse.com", env="LANGFUSE_HOST")
 
     class Config:
         env_file = ".env"

@@ -111,6 +111,20 @@ if [ ! -d "backend/venv" ]; then
     exit 1
 fi
 
+# Check if backend dependencies are up to date
+echo -e "${CYAN}🔍 Checking backend dependencies...${NC}"
+cd backend
+source venv/bin/activate
+if ! python -c "from app.main import app; print('✅ Backend dependencies OK')" > /dev/null 2>&1; then
+    echo -e "${YELLOW}📦 Updating backend dependencies...${NC}"
+    pip install -r requirements/dev.txt
+    if ! python -c "from app.main import app; print('✅ Backend dependencies OK')" > /dev/null 2>&1; then
+        echo -e "${RED}❌ Backend dependency installation failed${NC}"
+        exit 1
+    fi
+fi
+cd ..
+
 # Check if node_modules exists
 if [ ! -d "node_modules" ]; then
     echo -e "${YELLOW}📦 Installing frontend dependencies...${NC}"
@@ -138,8 +152,8 @@ cd backend
 # Activate virtual environment and start backend with debugger
 source venv/bin/activate
 
-# Start backend with debugpy for debugging
-python -m debugpy --listen 0.0.0.0:$BACKEND_DEBUG_PORT --wait-for-client -m uvicorn app.main:app \
+# Start backend with debugpy for debugging (non-blocking)
+python -m debugpy --listen 0.0.0.0:$BACKEND_DEBUG_PORT -m uvicorn app.main:app \
     --host 0.0.0.0 \
     --port $BACKEND_PORT \
     --reload \
@@ -151,7 +165,7 @@ BACKEND_PID=$!
 cd ..
 
 echo -e "${GREEN}✅ Backend started (PID: $BACKEND_PID)${NC}"
-echo -e "${BLUE}🐛 Debugger waiting for client on port $BACKEND_DEBUG_PORT${NC}"
+echo -e "${BLUE}🐛 Debugger available on port $BACKEND_DEBUG_PORT${NC}"
 
 # Start Frontend
 echo -e "${CYAN}⚛️  Starting frontend...${NC}"
@@ -161,6 +175,7 @@ FRONTEND_PID=$!
 echo -e "${GREEN}✅ Frontend started (PID: $FRONTEND_PID)${NC}"
 
 # Wait for services to be ready
+wait_for_service "http://localhost:$BACKEND_PORT/health" "Backend"
 wait_for_service "http://localhost:$FRONTEND_PORT" "Frontend"
 
 # Display information

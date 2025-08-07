@@ -183,7 +183,6 @@ class DevRunner {
         const backend = this.spawnProcess('python', [
             '-m', 'debugpy',
             '--listen', `0.0.0.0:${CONFIG.BACKEND_DEBUG_PORT}`,
-            '--wait-for-client',
             '-m', 'uvicorn',
             'app.main:app',
             '--host', '0.0.0.0',
@@ -204,7 +203,7 @@ class DevRunner {
         backend.stderr.pipe(backendLog);
 
         this.log(`✅ Backend started (PID: ${backend.pid})`, colors.green);
-        this.log(`🐛 Debugger waiting for client on port ${CONFIG.BACKEND_DEBUG_PORT}`, colors.blue);
+        this.log(`🐛 Debugger available on port ${CONFIG.BACKEND_DEBUG_PORT}`, colors.blue);
         
         return backend;
     }
@@ -269,6 +268,7 @@ class DevRunner {
         const frontend = this.startFrontend();
 
         // Wait for frontend to be ready
+        await this.waitForService(`http://localhost:${CONFIG.BACKEND_PORT}/health`, 'Backend');
         await this.waitForService(`http://localhost:${CONFIG.FRONTEND_PORT}`, 'Frontend');
         
         this.showInformation();

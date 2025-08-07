@@ -46,7 +46,12 @@
       "Bash(/Users/amadrazo/Desktop/dev/legalai/Elenchus/test-final-auth-fix.sh:*)",
       "Bash(npm run lint)",
       "Bash(npm run build:*)",
-      "Bash(./tests/test-dev-setup.sh:*)"
+      "Bash(./tests/test-dev-setup.sh:*)",
+      "Bash(timeout:*)",
+      "Bash(docker exec:*)",
+      "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")",
+      "Bash(./venv/bin/pip install langfuse)",
+      "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")"
     ],
     "deny": []
   }

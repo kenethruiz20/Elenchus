@@ -117,4 +117,66 @@ body {
   .animation-delay-600 {
     animation-delay: 600ms;
   }
+
+  /* AI Thinking Animation - Floating Orbs */
+  @keyframes ai-thinking-pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: scale(1.3);
+      opacity: 1;
+    }
+  }
+
+  @keyframes ai-thinking-gradient {
+    0% {
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+    }
+    33% {
+      background: linear-gradient(45deg, #8b5cf6, #06b6d4);
+    }
+    66% {
+      background: linear-gradient(45deg, #06b6d4, #10b981);
+    }
+    100% {
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+    }
+  }
+
+  .ai-thinking-orb {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+    animation: ai-thinking-pulse 1.5s infinite ease-in-out, ai-thinking-gradient 3s infinite linear;
+    display: inline-block;
+  }
+
+  .ai-thinking-orb-1 {
+    animation-delay: 0s;
+  }
+
+  .ai-thinking-orb-2 {
+    animation-delay: 0.3s;
+  }
+
+  .ai-thinking-orb-3 {
+    animation-delay: 0.6s;
+  }
+
+  /* Floating effect for the entire thinking container */
+  @keyframes ai-thinking-float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-2px);
+    }
+  }
+
+  .ai-thinking-container {
+    animation: ai-thinking-float 2s infinite ease-in-out;
+  }
 } 

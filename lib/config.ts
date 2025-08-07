@@ -16,7 +16,8 @@ export const config = {
       research: '/api/v1/research',
       sources: '/api/v1/sources',
       notes: '/api/v1/notes',
-      messages: '/api/v1/messages'
+      messages: '/api/v1/messages',
+      chat: '/api/chat'
     }
   },
   app: {

@@ -60,7 +60,7 @@ function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionM
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Session Title
+              Research Session Title
             </label>
             <input
               type="text"
@@ -74,7 +74,7 @@ function CreateSessionModal({ isOpen, onClose, onCreateSession }: CreateSessionM
           
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Session Type
+              Research Type
             </label>
             <div className="grid grid-cols-2 gap-3">
               {[

@@ -37,7 +37,7 @@ services:
       - SECRET_KEY=your-super-secret-key-at-least-32-characters-long-docker
       - DEBUG=false
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - BACKEND_CORS_ORIGINS=["http://localhost:3001","http://frontend:3000"]
+      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:3001","http://frontend:3000"]
     ports:
       - "8001:8000"
     volumes:

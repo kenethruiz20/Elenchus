@@ -5,8 +5,9 @@ import Header from '@/components/Header';
 import SourcesPanel from '@/components/SourcesPanel';
 import ChatPanel from '@/components/ChatPanel';
 import StudioPanel from '@/components/StudioPanel';
+import AuthProtection from '@/components/AuthProtection';
 
-export default function Home() {
+function ResearchPageContent() {
   const [sourcesPanelState, setSourcesPanelState] = useState<'normal' | 'expanded' | 'collapsed'>('normal');
   const [studioPanelState, setStudioPanelState] = useState<'normal' | 'collapsed'>('normal');
 
@@ -49,5 +50,13 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <AuthProtection>
+      <ResearchPageContent />
+    </AuthProtection>
   );
 } 

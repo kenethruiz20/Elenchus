@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import AuthProtection from '@/components/AuthProtection';
 import { 
   ArrowLeft, 
   BarChart3, 
@@ -11,7 +12,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [timeRange, setTimeRange] = useState('7d');
 
   // Mock usage data
@@ -256,5 +257,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <AuthProtection>
+      <DashboardPageContent />
+    </AuthProtection>
   );
 }

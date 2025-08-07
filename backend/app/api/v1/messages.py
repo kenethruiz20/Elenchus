@@ -16,13 +16,14 @@ from app.schemas.message import (
     MessageSendResponse
 )
 from app.services.model_router import model_router, ModelMessage, ModelRole
+from app.core.auth import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
-# Mock user dependency - replace with actual auth
-async def get_current_user_id() -> str:
-    """Mock user ID - replace with actual authentication."""
-    return "user_123"  # TODO: Implement actual authentication
+async def get_current_user_id(current_user: User = Depends(get_current_user)) -> str:
+    """Get current authenticated user ID."""
+    return str(current_user.id)
 
 
 @router.get("/research/{research_id}", response_model=ConversationResponse)

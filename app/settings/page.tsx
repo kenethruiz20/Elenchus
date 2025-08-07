@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import AuthProtection from '@/components/AuthProtection';
 import { 
   ArrowLeft, 
   User, 
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/app/context/ThemeContext';
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('account');
 
@@ -311,5 +312,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <AuthProtection>
+      <SettingsPageContent />
+    </AuthProtection>
   );
 }

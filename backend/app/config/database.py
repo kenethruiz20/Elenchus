@@ -33,12 +33,13 @@ async def init_database():
     database = mongodb_client[settings.MONGODB_DATABASE]
     
     # Import models here to avoid circular imports
-    from app.models import Research, Message, Source, Note
+    from app.models import Research, Message, Source, Note, User
     
     # Initialize Beanie with models
     await init_beanie(
         database=database,
         document_models=[
+            User,
             Research,
             Message,
             Source,
@@ -48,7 +49,7 @@ async def init_database():
     
     print("✅ MongoDB database initialized successfully")
     print(f"✅ Connected to database: {settings.MONGODB_DATABASE}")
-    print(f"✅ Models registered: Research, Message, Source, Note")
+    print(f"✅ Models registered: User, Research, Message, Source, Note")
     return database
 
 

@@ -33,7 +33,7 @@ export default function LandingPage() {
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition">Features</a>
               <a href="#how-it-works" className="text-gray-700 hover:text-blue-600 transition">How it Works</a>
               <a href="#use-cases" className="text-gray-700 hover:text-blue-600 transition">Use Cases</a>
-              <Link href="/app" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+              <Link href="/application" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                 Try Elenchus
               </Link>
             </div>
@@ -54,7 +54,7 @@ export default function LandingPage() {
               <a href="#features" className="block px-3 py-2 text-gray-700 hover:text-blue-600">Features</a>
               <a href="#how-it-works" className="block px-3 py-2 text-gray-700 hover:text-blue-600">How it Works</a>
               <a href="#use-cases" className="block px-3 py-2 text-gray-700 hover:text-blue-600">Use Cases</a>
-              <Link href="/app" className="block px-3 py-2 bg-blue-600 text-white rounded-lg">
+              <Link href="/application" className="block px-3 py-2 bg-blue-600 text-white rounded-lg">
                 Try Elenchus
               </Link>
             </div>
@@ -76,7 +76,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fadeIn animation-delay-400">
               <Link 
-                href="/app" 
+                href="/application" 
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition hover:scale-105 transform"
               >
                 Start Research Now
@@ -263,7 +263,7 @@ export default function LandingPage() {
             Join thousands of legal professionals using AI to work smarter, not harder.
           </p>
           <Link 
-            href="/app" 
+            href="/application" 
             className="inline-flex items-center px-8 py-4 bg-gray-50 text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition"
           >
             Get Started Free

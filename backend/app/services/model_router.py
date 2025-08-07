@@ -7,8 +7,15 @@ from enum import Enum
 from dataclasses import dataclass
 from pydantic import BaseModel
 
-import google.generativeai as genai
 from app.config.settings import settings
+
+# Import Google Generative AI only if the API key is available
+try:
+    import google.generativeai as genai
+    GOOGLE_AI_AVAILABLE = True
+except ImportError:
+    genai = None
+    GOOGLE_AI_AVAILABLE = False
 
 
 class ModelProvider(str, Enum):
@@ -94,6 +101,8 @@ class GeminiProvider(BaseModelProvider):
     
     def __init__(self, config: ModelConfig):
         super().__init__(config)
+        if not GOOGLE_AI_AVAILABLE:
+            raise ImportError("google-generativeai package not available. Install with: pip install google-generativeai")
         if config.api_key:
             genai.configure(api_key=config.api_key)
         self._model = None
@@ -317,16 +326,24 @@ class ModelRouter:
     def _initialize_providers(self):
         """Initialize all configured providers."""
         # Gemini configuration
-        if settings.GOOGLE_API_KEY:
-            gemini_config = ModelConfig(
-                provider=ModelProvider.GEMINI,
-                model_name="gemini-1.5-flash",
-                api_key=settings.GOOGLE_API_KEY,
-                temperature=0.7,
-                max_tokens=4096
-            )
-            self._providers["gemini-1.5-flash"] = GeminiProvider(gemini_config)
-            self._default_model = "gemini-1.5-flash"
+        if settings.GOOGLE_API_KEY and GOOGLE_AI_AVAILABLE:
+            try:
+                gemini_config = ModelConfig(
+                    provider=ModelProvider.GEMINI,
+                    model_name="gemini-1.5-flash",
+                    api_key=settings.GOOGLE_API_KEY,
+                    temperature=0.7,
+                    max_tokens=4096
+                )
+                self._providers["gemini-1.5-flash"] = GeminiProvider(gemini_config)
+                self._default_model = "gemini-1.5-flash"
+                print("✅ Gemini provider initialized successfully")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize Gemini provider: {e}")
+        elif not settings.GOOGLE_API_KEY:
+            print("⚠️ GOOGLE_API_KEY not set - Gemini provider disabled")
+        elif not GOOGLE_AI_AVAILABLE:
+            print("⚠️ google-generativeai package not available - Gemini provider disabled")
         
         # TODO: Add other providers based on environment variables
         # Example:

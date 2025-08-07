@@ -25,7 +25,27 @@ export interface Note {
   updatedAt: Date;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  last_login?: string;
+}
+
 export interface StoreState {
+  // Authentication
+  user: User | null;
+  accessToken: string | null;
+  isAuthenticated: boolean;
+  setAuth: (user: User, token: string) => void;
+  logout: () => void;
+  checkAuth: () => void;
+  
   // Sources
   sources: Source[];
   addSource: (source: Omit<Source, 'id'>) => void;
@@ -54,6 +74,34 @@ export interface StoreState {
 }
 
 export const useStore = create<StoreState>((set, get) => ({
+  // Authentication
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
+  setAuth: (user, token) => {
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    set({ user, accessToken: token, isAuthenticated: true });
+  },
+  logout: () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    set({ user: null, accessToken: null, isAuthenticated: false });
+  },
+  checkAuth: () => {
+    const token = localStorage.getItem('access_token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        set({ user, accessToken: token, isAuthenticated: true });
+      } catch {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+      }
+    }
+  },
+  
   // Sources
   sources: [],
   addSource: (source) => set((state) => ({

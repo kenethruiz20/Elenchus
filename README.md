@@ -82,22 +82,42 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Backend runs on: http://localhost:8000
 
 ### Docker Setup (Recommended)
+
+**Quick Start:**
 ```bash
-# Start full stack with Docker Compose
+# Run the setup script (handles .env and builds containers)
+./backend/docker-setup.sh
+```
+
+**Manual Setup:**
+```bash
+# 1. Set up backend environment
+cp backend/.env.minimal backend/.env
+# Edit backend/.env and add your Google Gemini API key
+
+# 2. Build and start services
 docker-compose up --build
 ```
 
 This starts:
-- Frontend (Next.js) on port 3000
-- Backend (FastAPI) on port 8000  
-- MongoDB database on port 27017
+- Frontend (Next.js) on port 3001
+- Backend (FastAPI) on port 8001  
+- MongoDB database on port 27018
+- Redis cache on port 6380
 
 ## 🌐 Access Points
 
+### Development (Local)
 - **Frontend**: http://localhost:3000 - Main application interface
 - **Backend API**: http://localhost:8000 - REST API endpoints
 - **API Documentation**: http://localhost:8000/docs - Interactive Swagger docs
 - **Health Check**: http://localhost:8000/health - Backend status
+
+### Docker (Containerized)
+- **Frontend**: http://localhost:3001 - Main application interface
+- **Backend API**: http://localhost:8001 - REST API endpoints
+- **API Documentation**: http://localhost:8001/docs - Interactive Swagger docs
+- **Health Check**: http://localhost:8001/health - Backend status
 
 ## 📁 Project Structure
 

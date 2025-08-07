@@ -3,9 +3,7 @@
 services:
   # MongoDB Database
   mongodb:
-    build:
-      context: ./backend
-      dockerfile: docker/Dockerfile.mongodb
+    image: mongo:7.0-jammy
     container_name: elenchus-mongodb
     restart: unless-stopped
     environment:

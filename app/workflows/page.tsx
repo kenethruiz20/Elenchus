@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import AuthProtection from '@/components/AuthProtection';
 import { 
   Plus,
   MoreVertical,
@@ -43,7 +44,7 @@ interface Workflow {
   status: 'active' | 'draft' | 'archived';
 }
 
-export default function WorkflowsPage() {
+function WorkflowsPageContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('recent');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -436,5 +437,13 @@ export default function WorkflowsPage() {
       {/* Footer */}
       <Footer />
     </div>
+  );
+}
+
+export default function WorkflowsPage() {
+  return (
+    <AuthProtection>
+      <WorkflowsPageContent />
+    </AuthProtection>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useStore } from '@/store/useStore';
+import AuthProtection from '@/components/AuthProtection';
 import { 
   Plus,
   MoreVertical,
@@ -35,12 +37,13 @@ interface Notebook {
   type: 'case' | 'contract' | 'brief' | 'research';
 }
 
-export default function NotebookOverview() {
+function NotebookOverviewContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('recent');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -136,13 +139,19 @@ export default function NotebookOverview() {
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center hover:ring-2 hover:ring-blue-400 transition-all"
+                  title={user?.email}
                 >
-                  <User className="w-4 h-4 text-white" />
+                  {user?.first_name ? user.first_name[0].toUpperCase() : user?.email[0].toUpperCase()}
                 </button>
 
                 {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                {isDropdownOpen && user && (
+                  <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                    <div className="px-4 py-3 border-b border-gray-700">
+                      <p className="text-sm font-medium text-white">{user.full_name}</p>
+                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                    </div>
+                    
                     <Link 
                       href="/settings"
                       className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
@@ -175,8 +184,7 @@ export default function NotebookOverview() {
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors text-left"
                       onClick={() => {
                         setIsDropdownOpen(false);
-                        // Handle logout logic here
-                        console.log('Logout clicked');
+                        logout();
                       }}
                     >
                       <LogOut className="w-4 h-4 mr-3" />
@@ -347,5 +355,13 @@ export default function NotebookOverview() {
       {/* Footer */}
       <Footer />
     </div>
+  );
+}
+
+export default function NotebookOverview() {
+  return (
+    <AuthProtection>
+      <NotebookOverviewContent />
+    </AuthProtection>
   );
 }

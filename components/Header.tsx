@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { User, ArrowLeft, LogOut, MessageSquare, LayoutDashboard, Moon, Sun, Settings } from 'lucide-react';
 import { useTheme } from '@/app/context/ThemeContext';
 
@@ -9,6 +10,10 @@ const Header: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
+  
+  // Determine logo destination based on current page
+  const logoDestination = pathname?.startsWith('/research') ? '/application' : '/';
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -26,13 +31,13 @@ const Header: React.FC = () => {
       {/* Left side - Back button and Title */}
       <div className="flex items-center space-x-3">
         <Link 
-          href="/app" 
+          href="/application" 
           className="p-1.5 text-slate-300 dark:text-slate-300 text-gray-600 hover:text-slate-100 dark:hover:text-slate-100 hover:text-gray-900 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-gray-100 rounded-md transition-colors"
           title="Back to notebooks"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href={logoDestination} className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-semibold text-sm">⚖️</span>
           </div>

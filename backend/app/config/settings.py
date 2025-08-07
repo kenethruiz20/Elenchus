@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     
     # AI Services
     GOOGLE_API_KEY: Optional[str] = Field(None, env="GOOGLE_API_KEY")
+    OPENAI_API_KEY: Optional[str] = Field(None, env="OPENAI_API_KEY")
+    ANTHROPIC_API_KEY: Optional[str] = Field(None, env="ANTHROPIC_API_KEY")
+    LMSTUDIO_BASE_URL: Optional[str] = Field(None, env="LMSTUDIO_BASE_URL")
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [

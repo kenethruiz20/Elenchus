@@ -1,4 +1,5 @@
 """Messages API endpoints for chat conversations."""
+import time
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
@@ -14,6 +15,7 @@ from app.schemas.message import (
     MessageSendRequest,
     MessageSendResponse
 )
+from app.services.model_router import model_router, ModelMessage, ModelRole
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -106,9 +108,50 @@ async def send_message(
         )
         await user_message.create()
         
-        # TODO: Integrate with actual LLM (Google Gemini)
-        # For now, create a mock assistant response
-        assistant_response = f"This is a mock response to: '{message_request.message}'. Integration with Google Gemini will be implemented in the next phase."
+        # Get conversation context for LLM
+        context_messages = []
+        
+        # Add system prompt if needed
+        system_prompt = "You are Elenchus, a legal AI assistant. Provide helpful, accurate legal analysis and research assistance."
+        context_messages.append(ModelMessage(
+            role=ModelRole.SYSTEM,
+            content=system_prompt
+        ))
+        
+        # Get recent conversation history (last 10 messages for context)
+        recent_messages = await Message.find(
+            {"research_id": research_id, "is_hidden": False}
+        ).sort([("sequence_number", -1)]).limit(10).to_list()
+        
+        # Add recent messages to context (in chronological order)
+        for msg in reversed(recent_messages):
+            role = ModelRole.USER if msg.role == "user" else ModelRole.ASSISTANT
+            context_messages.append(ModelMessage(
+                role=role,
+                content=msg.content
+            ))
+        
+        # Add current user message
+        context_messages.append(ModelMessage(
+            role=ModelRole.USER,
+            content=message_request.message
+        ))
+        
+        # Generate response using model router
+        start_time = time.time()
+        llm_response = await model_router.generate_response(
+            messages=context_messages,
+            model=research.model
+        )
+        response_time = (time.time() - start_time) * 1000
+        
+        # Handle errors
+        if llm_response.error:
+            assistant_response = f"I apologize, but I encountered an error while processing your request: {llm_response.error}"
+            tokens_used = 0
+        else:
+            assistant_response = llm_response.content
+            tokens_used = llm_response.tokens_used or 0
         
         # Create assistant message
         assistant_message = Message(
@@ -118,8 +161,10 @@ async def send_message(
             user_id=user_id,
             sequence_number=next_seq + 1,
             model=research.model,
-            tokens_used=50,  # Mock value
-            response_time_ms=1000.0  # Mock value
+            tokens_used=tokens_used,
+            response_time_ms=response_time,
+            is_error=bool(llm_response.error),
+            error_code=llm_response.error if llm_response.error else None
         )
         await assistant_message.create()
         

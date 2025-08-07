@@ -1,6 +1,6 @@
-# NotebookLM Replica
+# Elenchus - Legal AI Assistant
 
-A faithful recreation of Google's NotebookLM interface using modern web technologies. This project replicates the exact UI/UX, three-panel layout, and core functionality of NotebookLM.
+A hybrid legal AI assistant application consisting of a modern frontend that replicates Google's NotebookLM interface and a powerful FastAPI backend with Google Gemini AI integration.
 
 ![NotebookLM Replica Screenshot](https://via.placeholder.com/800x400/1e293b/f8fafc?text=NotebookLM+Replica)
 
@@ -26,33 +26,98 @@ A faithful recreation of Google's NotebookLM interface using modern web technolo
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 14 + React 18 + TypeScript
+### Frontend
+- **Framework**: Next.js 14 + React 18 + TypeScript
 - **Styling**: Tailwind CSS with custom dark theme
 - **State Management**: Zustand
 - **Icons**: Lucide React
 - **UI Components**: Headless UI (for accessibility)
 - **Development**: ESLint + TypeScript strict mode
 
-## 📦 Installation
+### Backend
+- **Framework**: FastAPI + Python 3.12
+- **Database**: MongoDB with Beanie ODM
+- **AI Integration**: Google Gemini 1.5 Flash via ModelRouter service
+- **Authentication**: OAuth 2.0 (Google)
+- **Deployment**: Docker + Google Cloud Run
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd notebooklm-replica
-   ```
+## 📦 Installation & Setup
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.12+ and pip
+- MongoDB (or Docker)
+- Google Gemini API key
 
-3. **Run the development server**
-   ```bash
-   npm run dev
-   ```
+### Frontend Setup
+```bash
+# Install frontend dependencies
+npm install
 
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+# Run frontend development server
+npm run dev
+```
+Frontend runs on: http://localhost:3000
+
+### Backend Setup
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements/base.txt
+pip install -r requirements/mongodb.txt
+
+# Set up environment variables
+cp .env.minimal .env
+# Edit .env and add your Google Gemini API key
+
+# Run backend development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+Backend runs on: http://localhost:8000
+
+### Docker Setup (Recommended)
+```bash
+# Start full stack with Docker Compose
+docker-compose up --build
+```
+
+This starts:
+- Frontend (Next.js) on port 3000
+- Backend (FastAPI) on port 8000  
+- MongoDB database on port 27017
+
+## 🌐 Access Points
+
+- **Frontend**: http://localhost:3000 - Main application interface
+- **Backend API**: http://localhost:8000 - REST API endpoints
+- **API Documentation**: http://localhost:8000/docs - Interactive Swagger docs
+- **Health Check**: http://localhost:8000/health - Backend status
+
+## 📁 Project Structure
+
+```
+Elenchus/
+├── frontend/                 # Next.js frontend application
+│   ├── components/          # React components (ChatPanel, SourcesPanel, etc.)
+│   ├── store/              # Zustand state management
+│   └── app/                # Next.js 14 app router pages
+├── backend/                # FastAPI backend application
+│   ├── app/
+│   │   ├── api/v1/         # REST API endpoints
+│   │   ├── models/         # MongoDB/Beanie models
+│   │   ├── schemas/        # Pydantic schemas
+│   │   ├── services/       # Business logic (ModelRouter, etc.)
+│   │   └── config/         # Database and settings configuration
+│   ├── requirements/       # Python dependencies
+│   └── docker/            # Docker configuration files
+└── docker-compose.yml     # Full stack orchestration
+```
 
 ## 🎯 Usage
 

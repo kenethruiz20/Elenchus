@@ -28,6 +28,10 @@
       "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")",
       "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")",
       "Bash(./venv/bin/pip install python-multipart)",
+      "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")",
+      "Bash(./venv/bin/python -c \"from app.services.model_router import model_router; print(''✅ ModelRouter imported successfully'')\")",
+      "Bash(./venv/bin/pip install google-generativeai)",
+      "Bash(./venv/bin/python -c \"from app.services.model_router import model_router; print(''✅ ModelRouter imported successfully'')\")",
       "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")"
     ],
     "deny": []

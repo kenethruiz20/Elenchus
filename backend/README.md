@@ -253,25 +253,40 @@ pip install -r requirements/mongodb.txt
 ```
 
 4. **Set up environment variables:**
-Create `.env` file:
-```env
-# MongoDB
-MONGODB_URL=mongodb://localhost:27017
-MONGODB_DATABASE=elenchus_dev
 
-# API Settings
-APP_NAME=Elenchus Backend
-APP_VERSION=1.0.0
+**Quick Setup (Recommended):**
+```bash
+cp .env.minimal .env
+# Edit .env and add your Google Gemini API key
+```
+
+**Complete Setup:**
+```bash
+cp .env.example .env
+# Edit .env with all your API keys and settings
+```
+
+**Minimum Required Variables:**
+```env
+# Application
 DEBUG=true
-HOST=0.0.0.0
-PORT=8000
+SECRET_KEY=your-super-secret-key-change-this-min-32-chars-long
+
+# Database
+MONGODB_URL=mongodb://localhost:27017/elenchus
+MONGODB_DATABASE=elenchus
+
+# AI Provider (REQUIRED)
+GOOGLE_API_KEY=your_google_gemini_api_key_here
 
 # CORS
-BACKEND_CORS_ORIGINS=["http://localhost:3000", "http://127.0.0.1:3000"]
-
-# Google Gemini (optional)
-GOOGLE_API_KEY=your_api_key_here
+BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:3001"]
 ```
+
+**Get API Keys:**
+- **Google Gemini**: https://makersuite.google.com/app/apikey
+- **OpenAI** (optional): https://platform.openai.com/api-keys  
+- **Anthropic Claude** (optional): https://console.anthropic.com/
 
 ### Docker Setup (Recommended)
 

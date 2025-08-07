@@ -1,0 +1,11 @@
+# MongoDB requirements for Elenchus Legal AI
+# Add to base requirements for MongoDB support
+
+# MongoDB Driver
+motor==3.3.2                    # Async MongoDB driver
+pymongo==4.6.1                  # MongoDB driver (includes BSON support)
+beanie==1.26.0                  # Async ODM for MongoDB with Pydantic
+
+# Additional utilities for MongoDB
+dnspython==2.4.2                # DNS resolution for MongoDB connections
+python-multipart==0.0.20        # File upload support for FastAPI

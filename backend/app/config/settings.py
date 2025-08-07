@@ -16,8 +16,9 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
-    # Database
-    DATABASE_URL: Optional[str] = Field(None, env="DATABASE_URL")
+    # Database - MongoDB
+    MONGODB_URL: str = Field("mongodb://elenchus_user:elenchus_app_password@localhost:27017/elenchus", env="MONGODB_URL")
+    MONGODB_DATABASE: str = Field("elenchus", env="MONGODB_DATABASE")
     
     # Redis Cache
     REDIS_URL: Optional[str] = Field(None, env="REDIS_URL")

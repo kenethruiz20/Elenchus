@@ -233,7 +233,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
-                >
                   <Paperclip className="w-4 h-4" />
                 </button>
               </div>

@@ -1,8 +1,8 @@
 """Messages API endpoints for chat conversations."""
 import time
 from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+from typing import List, Optional, Union
+from fastapi import APIRouter, HTTPException, Query, Depends, Form
 from beanie import PydanticObjectId
 
 from app.models import Research, Message
@@ -82,10 +82,15 @@ async def get_conversation(
 @router.post("/research/{research_id}/send", response_model=MessageSendResponse)
 async def send_message(
     research_id: str,
-    message_request: MessageSendRequest,
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
+    # Support both JSON and form data
+    message_request: Optional[MessageSendRequest] = None,
+    message: Optional[str] = Form(None),
+    stream: bool = Form(False),
+    include_sources: bool = Form(True),
+    temperature: Optional[float] = Form(None)
 ) -> MessageSendResponse:
-    """Send a message to the AI and get response."""
+    """Send a message to the AI and get response. Supports both JSON and form data."""
     try:
         # Verify research exists and user has access
         research = await Research.get(PydanticObjectId(research_id))
@@ -95,6 +100,29 @@ async def send_message(
         if research.user_id != user_id:
             raise HTTPException(status_code=403, detail="Access denied")
         
+        # Handle both JSON and form data requests
+        if message_request:
+            # JSON request
+            message_text = message_request.message
+            use_stream = message_request.stream
+            use_sources = message_request.include_sources
+            use_temperature = message_request.temperature
+        elif message:
+            # Form data request
+            message_text = message
+            use_stream = stream
+            use_sources = include_sources
+            use_temperature = temperature
+        else:
+            raise HTTPException(status_code=400, detail="Either JSON body or form data 'message' field is required")
+        
+        # Validate message content
+        if not message_text or len(message_text.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Message content cannot be empty")
+        
+        if len(message_text) > 10000:
+            raise HTTPException(status_code=400, detail="Message content too long (max 10,000 characters)")
+        
         # Get next sequence number
         last_message = await Message.find({"research_id": research_id}).sort([("sequence_number", -1)]).first_or_none()
         next_seq = (last_message.sequence_number + 1) if last_message else 1
@@ -102,7 +130,7 @@ async def send_message(
         # Create user message
         user_message = Message(
             research_id=research_id,
-            content=message_request.message,
+            content=message_text,
             role="user",
             user_id=user_id,
             sequence_number=next_seq
@@ -135,7 +163,7 @@ async def send_message(
         # Add current user message
         context_messages.append(ModelMessage(
             role=ModelRole.USER,
-            content=message_request.message
+            content=message_text
         ))
         
         # Generate response using model router

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Plus, Search, FileText, Upload, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, FileText, Upload, X, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import SourceDetails from './SourceDetails';
 import DiscoverModal from './DiscoverModal';
+import { ragService, UploadProgress } from '../services/ragService';
 
 interface SourcesPanelProps {
   panelState: 'normal' | 'expanded' | 'collapsed';
@@ -13,7 +14,7 @@ interface SourcesPanelProps {
 }
 
 const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateChange, onEnsureSession }) => {
-  const { sources, addSource, removeSource } = useStore();
+  const { sources, addSource, removeSource, updateSource, isAuthenticated } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [isDiscoverModalOpen, setIsDiscoverModalOpen] = useState(false);
@@ -43,27 +44,84 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
-      // Ensure session exists before adding sources
-      onEnsureSession('source', 'Document Analysis');
-      
-      Array.from(files).forEach(file => {
-        const fileType = file.type;
-        let sourceType: 'pdf' | 'doc' | 'txt' | 'url' = 'txt';
-        
-        if (fileType.includes('pdf')) sourceType = 'pdf';
-        else if (fileType.includes('document') || fileType.includes('word')) sourceType = 'doc';
-        
-        addSource({
-          name: file.name,
-          type: sourceType,
-          uploadDate: new Date(),
-          size: file.size
-        });
-      });
+    if (!files) return;
+
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      alert('Please log in to upload files');
+      return;
     }
+
+    // Ensure session exists before adding sources
+    onEnsureSession('source', 'Document Analysis');
+    
+    // Process each file
+    for (const file of Array.from(files)) {
+      // Validate file
+      const validation = ragService.validateFile(file);
+      if (!validation.valid) {
+        alert(`Error with ${file.name}: ${validation.error}`);
+        continue;
+      }
+
+      const fileType = file.type;
+      let sourceType: 'pdf' | 'doc' | 'txt' | 'url' = 'txt';
+      
+      if (fileType.includes('pdf')) sourceType = 'pdf';
+      else if (fileType.includes('document') || fileType.includes('word')) sourceType = 'doc';
+
+      // Add source to store immediately with uploading status
+      const tempSource = {
+        name: file.name,
+        type: sourceType,
+        uploadDate: new Date(),
+        size: file.size,
+        status: 'uploading' as const,
+        uploadProgress: 0
+      };
+
+      // Add source and get the returned ID
+      const sourceId = addSource(tempSource);
+      
+      if (!sourceId) {
+        console.error('Failed to get source ID from addSource');
+        continue;
+      }
+
+      try {
+        // Upload file to RAG backend
+        const response = await ragService.uploadDocument(
+          file,
+          (progress: UploadProgress) => {
+            // Update progress in store
+            updateSource(sourceId, { 
+              uploadProgress: progress.percentage 
+            });
+          }
+        );
+
+        // Update source with successful upload
+        updateSource(sourceId, {
+          status: response.status as 'uploading' | 'pending' | 'processing' | 'completed' | 'failed',
+          ragDocumentId: response.id,
+          uploadProgress: 100
+        });
+
+      } catch (error) {
+        console.error('File upload failed:', error);
+        
+        // Update source with error status
+        updateSource(sourceId, {
+          status: 'failed',
+          processingError: error instanceof Error ? error.message : 'Upload failed'
+        });
+        
+        alert(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
     // Reset the input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -182,6 +240,40 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
                       <p className="text-xs text-gray-600 dark:text-slate-400 mt-1 truncate">
                         {source.type.toUpperCase()}
                         {source.size && ` • ${formatFileSize(source.size)}`}
+                        {source.status && (
+                          <span className="ml-2">
+                            {source.status === 'uploading' && (
+                              <span className="inline-flex items-center text-blue-600 dark:text-blue-400">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {source.uploadProgress !== undefined && `${source.uploadProgress}%`}
+                              </span>
+                            )}
+                            {source.status === 'pending' && (
+                              <span className="inline-flex items-center text-blue-600 dark:text-blue-400">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Uploaded
+                              </span>
+                            )}
+                            {source.status === 'processing' && (
+                              <span className="inline-flex items-center text-yellow-600 dark:text-yellow-400">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Processing...
+                              </span>
+                            )}
+                            {source.status === 'completed' && (
+                              <span className="inline-flex items-center text-green-600 dark:text-green-400">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Ready
+                              </span>
+                            )}
+                            {source.status === 'failed' && (
+                              <span className="inline-flex items-center text-red-600 dark:text-red-400">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                Failed
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

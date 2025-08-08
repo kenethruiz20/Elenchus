@@ -166,7 +166,7 @@ function NotebookOverviewContent() {
   const handleCreateSession = async (title: string, type: ResearchSession['type']) => {
     const sessionIdOrPromise = createSession(title, type);
     // Handle both Promise and string return types
-    const sessionId = sessionIdOrPromise instanceof Promise 
+    const sessionId = typeof sessionIdOrPromise === 'object' && sessionIdOrPromise !== null && 'then' in sessionIdOrPromise
       ? await sessionIdOrPromise 
       : sessionIdOrPromise;
     // Redirect to research page with the new session

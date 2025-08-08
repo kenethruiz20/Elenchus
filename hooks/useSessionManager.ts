@@ -35,7 +35,7 @@ export function useSessionManager() {
         
         const sessionIdOrPromise = createSession(sessionTitle, sessionType);
         // Handle both Promise and string return types
-        const newSessionId = sessionIdOrPromise instanceof Promise 
+        const newSessionId = typeof sessionIdOrPromise === 'object' && sessionIdOrPromise !== null && 'then' in sessionIdOrPromise
           ? await sessionIdOrPromise 
           : sessionIdOrPromise;
         

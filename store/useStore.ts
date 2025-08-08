@@ -7,6 +7,11 @@ export interface Source {
   type: 'pdf' | 'doc' | 'txt' | 'url';
   uploadDate: Date;
   size?: number;
+  // RAG integration fields
+  ragDocumentId?: string;
+  status?: 'uploading' | 'pending' | 'processing' | 'completed' | 'failed';
+  uploadProgress?: number;
+  processingError?: string;
 }
 
 export interface ChatMessage {
@@ -65,7 +70,7 @@ export interface StoreState {
   // Research Sessions
   researchSessions: ResearchSession[];
   currentSessionId: string | null;
-  createSession: (title: string, type: ResearchSession['type']) => string;
+  createSession: (title: string, type: ResearchSession['type']) => string | Promise<string>;
   updateSession: (id: string, updates: Partial<ResearchSession>) => void;
   deleteSession: (id: string) => void;
   setCurrentSession: (id: string | null) => void;
@@ -73,8 +78,9 @@ export interface StoreState {
   
   // Sources (session-scoped)
   sources: Source[];
-  addSource: (source: Omit<Source, 'id'>) => void;
+  addSource: (source: Omit<Source, 'id'>) => string;
   removeSource: (id: string) => void;
+  updateSource: (id: string, updates: Partial<Source>) => void;
   
   // Chat (session-scoped)
   chatMessages: ChatMessage[];
@@ -382,7 +388,8 @@ export const useStore = create<StoreState>((set, get) => ({
   // Sources (session-scoped)
   sources: [],
   addSource: (source) => {
-    const newSource = { ...source, id: uuidv4() };
+    const sourceId = uuidv4();
+    const newSource = { ...source, id: sourceId };
     set((state) => {
       const updatedSources = [...state.sources, newSource];
       
@@ -399,10 +406,30 @@ export const useStore = create<StoreState>((set, get) => ({
       
       return { sources: updatedSources };
     });
+    return sourceId;
   },
   
   removeSource: (id) => set((state) => {
     const updatedSources = state.sources.filter(source => source.id !== id);
+    
+    // Update current session
+    if (state.currentSessionId) {
+      const updatedSessions = state.researchSessions.map(session =>
+        session.id === state.currentSessionId 
+          ? { ...session, sources: updatedSources, updatedAt: new Date() }
+          : session
+      );
+      localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+      return { sources: updatedSources, researchSessions: updatedSessions };
+    }
+    
+    return { sources: updatedSources };
+  }),
+
+  updateSource: (id, updates) => set((state) => {
+    const updatedSources = state.sources.map(source => 
+      source.id === id ? { ...source, ...updates } : source
+    );
     
     // Update current session
     if (state.currentSessionId) {

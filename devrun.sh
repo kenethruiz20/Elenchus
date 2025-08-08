@@ -107,7 +107,7 @@ fi
 # Check if backend virtual environment exists
 if [ ! -d "backend/venv" ]; then
     echo -e "${RED}❌ Backend virtual environment not found${NC}"
-    echo -e "${YELLOW}Please run: cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements/dev.txt${NC}"
+    echo -e "${YELLOW}Please run: cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements/minimal.txt${NC}"
     exit 1
 fi
 
@@ -117,9 +117,11 @@ cd backend
 source venv/bin/activate
 if ! python -c "from app.main import app; print('✅ Backend dependencies OK')" > /dev/null 2>&1; then
     echo -e "${YELLOW}📦 Updating backend dependencies...${NC}"
-    pip install -r requirements/dev.txt
+    echo -e "${CYAN}  Using minimal requirements to avoid dependency conflicts${NC}"
+    pip install -r requirements/minimal.txt
     if ! python -c "from app.main import app; print('✅ Backend dependencies OK')" > /dev/null 2>&1; then
         echo -e "${RED}❌ Backend dependency installation failed${NC}"
+        echo -e "${YELLOW}  Try: cd backend && pip install -r requirements/minimal.txt${NC}"
         exit 1
     fi
 fi

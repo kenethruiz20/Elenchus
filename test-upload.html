@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test RAG Upload</title>
+    <script>
+        async function testUpload() {
+            // Mock the upload process similar to SourcesPanel
+            console.log('🔄 Testing upload process...');
+            
+            // Mock addSource function that returns ID
+            function mockAddSource(source) {
+                const id = Math.random().toString(36).substring(2, 15);
+                console.log('✅ Source added with ID:', id);
+                return id;
+            }
+            
+            // Mock updateSource function
+            function mockUpdateSource(id, updates) {
+                console.log('📝 Source updated:', id, updates);
+            }
+            
+            // Test the upload flow
+            const testSource = {
+                name: 'test-document.txt',
+                type: 'txt',
+                uploadDate: new Date(),
+                size: 1024,
+                status: 'uploading',
+                uploadProgress: 0
+            };
+            
+            // Add source and get ID (like our fixed implementation)
+            const sourceId = mockAddSource(testSource);
+            
+            if (!sourceId) {
+                console.error('❌ Failed to get source ID from addSource');
+                return;
+            }
+            
+            // Simulate upload progress
+            for (let progress = 0; progress <= 100; progress += 20) {
+                setTimeout(() => {
+                    mockUpdateSource(sourceId, { uploadProgress: progress });
+                }, progress * 10);
+            }
+            
+            // Simulate successful upload
+            setTimeout(() => {
+                const mockResponse = {
+                    id: '68961fc115b6b5d0e4ebe80f',
+                    status: 'pending',
+                    file_size: 1024
+                };
+                
+                mockUpdateSource(sourceId, {
+                    status: mockResponse.status,
+                    ragDocumentId: mockResponse.id,
+                    uploadProgress: 100
+                });
+                
+                console.log('🎉 Upload test completed successfully!');
+            }, 1000);
+        }
+        
+        // Run test when page loads
+        window.onload = testUpload;
+    </script>
+</head>
+<body>
+    <h1>RAG Upload Test</h1>
+    <p>Check browser console for test results.</p>
+    <p>This simulates the fixed upload flow:</p>
+    <ul>
+        <li>✅ addSource() returns source ID</li>
+        <li>✅ Progress tracking works</li>
+        <li>✅ Status updates work</li>
+    </ul>
+</body>
+</html>

@@ -24,7 +24,10 @@ import {
   MessageSquare,
   LayoutDashboard,
   Moon,
-  Sun
+  Sun,
+  Trash2,
+  Share2,
+  Download
 } from 'lucide-react';
 import { useTheme } from '@/app/context/ThemeContext';
 import Footer from '@/components/Footer';
@@ -126,14 +129,19 @@ function NotebookOverviewContent() {
   const [sortBy, setSortBy] = useState('recent');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeSessionMenu, setActiveSessionMenu] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const sessionMenuRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
-  const { user, logout, researchSessions, createSession, setCurrentSession } = useStore();
+  const { user, logout, researchSessions, createSession, setCurrentSession, deleteSession } = useStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (sessionMenuRef.current && !sessionMenuRef.current.contains(event.target as Node)) {
+        setActiveSessionMenu(null);
       }
     };
 
@@ -155,8 +163,12 @@ function NotebookOverviewContent() {
     }
   });
 
-  const handleCreateSession = (title: string, type: ResearchSession['type']) => {
-    const sessionId = createSession(title, type);
+  const handleCreateSession = async (title: string, type: ResearchSession['type']) => {
+    const sessionIdOrPromise = createSession(title, type);
+    // Handle both Promise and string return types
+    const sessionId = sessionIdOrPromise instanceof Promise 
+      ? await sessionIdOrPromise 
+      : sessionIdOrPromise;
     // Redirect to research page with the new session
     window.location.href = `/research?id=${sessionId}`;
   };
@@ -182,6 +194,78 @@ function NotebookOverviewContent() {
       case 'research': return <BookOpen className="h-5 w-5" />;
       default: return <FileText className="h-5 w-5" />;
     }
+  };
+
+  const handleDeleteSession = (sessionId: string, sessionTitle: string) => {
+    if (confirm(`Are you sure you want to delete "${sessionTitle}"? This action cannot be undone.`)) {
+      deleteSession(sessionId);
+      setActiveSessionMenu(null);
+    }
+  };
+
+  const handleShareSession = (sessionId: string) => {
+    // Placeholder for share functionality
+    alert('Share functionality will be implemented soon!');
+    setActiveSessionMenu(null);
+  };
+
+  const handleExportSession = (session: ResearchSession) => {
+    const title = session.title || 'Research Session';
+    const type = session.type || 'general';
+    const createdAt = session.createdAt ? new Date(session.createdAt).toLocaleString() : new Date().toLocaleString();
+    
+    let markdown = `# ${title}\n\n`;
+    markdown += `**Type:** ${type}\n`;
+    markdown += `**Date:** ${createdAt}\n`;
+    markdown += `**Sources:** ${session.sources.length}\n`;
+    markdown += `**Messages:** ${session.chatMessages.length}\n\n`;
+    markdown += `---\n\n`;
+    
+    // Add sources section
+    if (session.sources.length > 0) {
+      markdown += `## Sources\n\n`;
+      session.sources.forEach((source, index) => {
+        markdown += `${index + 1}. **${source.name}** (${source.type})\n`;
+      });
+      markdown += `\n---\n\n`;
+    }
+    
+    // Add conversation section
+    if (session.chatMessages.length > 0) {
+      markdown += `## Conversation\n\n`;
+      session.chatMessages.forEach((message) => {
+        const timestamp = new Date(message.timestamp).toLocaleTimeString();
+        const role = message.isUser ? '**User**' : '**Assistant**';
+        markdown += `### ${role} - ${timestamp}\n\n`;
+        markdown += `${message.content}\n\n`;
+        markdown += `---\n\n`;
+      });
+    }
+
+    // Add notes section
+    if (session.notes.length > 0) {
+      markdown += `## Notes\n\n`;
+      session.notes.forEach((note) => {
+        markdown += `### ${note.title}\n\n`;
+        const div = document.createElement('div');
+        div.innerHTML = note.content;
+        const text = div.textContent || div.innerText || '';
+        markdown += `${text}\n\n`;
+        markdown += `---\n\n`;
+      });
+    }
+
+    // Create and download the file
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setActiveSessionMenu(null);
   };
 
   return (
@@ -324,20 +408,59 @@ function NotebookOverviewContent() {
                   <div
                     key={session.id}
                     onClick={() => handleSessionClick(session.id)}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all hover:scale-105 transform cursor-pointer shadow-sm hover:shadow-md"
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all hover:scale-105 transform cursor-pointer shadow-sm hover:shadow-md relative"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="text-4xl">{session.icon}</div>
-                      <button 
-                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          // TODO: Add context menu for session options
-                        }}
-                      >
-                        <MoreVertical className="h-4 w-4 text-gray-400" />
-                      </button>
+                      <div className="relative" ref={activeSessionMenu === session.id ? sessionMenuRef : null}>
+                        <button 
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setActiveSessionMenu(activeSessionMenu === session.id ? null : session.id);
+                          }}
+                        >
+                          <MoreVertical className="h-4 w-4 text-gray-400" />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {activeSessionMenu === session.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExportSession(session);
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                            >
+                              <Download className="w-4 h-4 mr-3" />
+                              Export
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShareSession(session.id);
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                            >
+                              <Share2 className="w-4 h-4 mr-3" />
+                              Share
+                            </button>
+                            <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSession(session.id, session.title);
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                            >
+                              <Trash2 className="w-4 h-4 mr-3" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <h3 className="text-gray-900 dark:text-white font-semibold mb-2 line-clamp-2">{session.title}</h3>
                     <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
@@ -371,16 +494,55 @@ function NotebookOverviewContent() {
                         </div>
                       </div>
                     </div>
-                    <button 
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition ml-4"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // TODO: Add context menu for session options
-                      }}
-                    >
-                      <MoreVertical className="h-4 w-4 text-gray-400" />
-                    </button>
+                    <div className="relative ml-4" ref={activeSessionMenu === session.id ? sessionMenuRef : null}>
+                      <button 
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActiveSessionMenu(activeSessionMenu === session.id ? null : session.id);
+                        }}
+                      >
+                        <MoreVertical className="h-4 w-4 text-gray-400" />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {activeSessionMenu === session.id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportSession(session);
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                          >
+                            <Download className="w-4 h-4 mr-3" />
+                            Export
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShareSession(session.id);
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+                          >
+                            <Share2 className="w-4 h-4 mr-3" />
+                            Share
+                          </button>
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSession(session.id, session.title);
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                          >
+                            <Trash2 className="w-4 h-4 mr-3" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

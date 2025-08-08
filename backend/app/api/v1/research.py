@@ -14,13 +14,14 @@ from app.schemas.research import (
     ResearchSourceUpdate,
     ResearchNoteUpdate
 )
+from app.core.auth import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/research", tags=["research"])
 
-# Mock user dependency - replace with actual auth
-async def get_current_user_id() -> str:
-    """Mock user ID - replace with actual authentication."""
-    return "user_123"  # TODO: Implement actual authentication
+async def get_current_user_id(current_user: User = Depends(get_current_user)) -> str:
+    """Get current authenticated user ID."""
+    return str(current_user.id)
 
 
 @router.post("/", response_model=ResearchResponse)

@@ -141,7 +141,7 @@ export const useStore = create<StoreState>((set, get) => ({
         const user = JSON.parse(userStr);
         set({ user, accessToken: token, isAuthenticated: true });
         
-        // Load research sessions from localStorage
+        // Load research sessions from localStorage first (for immediate UI)
         const sessionsStr = localStorage.getItem('research_sessions');
         if (sessionsStr) {
           const sessions = JSON.parse(sessionsStr).map((session: any) => ({
@@ -165,6 +165,23 @@ export const useStore = create<StoreState>((set, get) => ({
           }));
           set({ researchSessions: sessions });
         }
+        
+        // Also fetch sessions from backend to sync
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/research/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.items) {
+            // Merge backend sessions with local sessions
+            console.log('Syncing research sessions from backend:', data.items);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch research sessions from backend:', error);
+        });
       } catch {
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
@@ -178,36 +195,128 @@ export const useStore = create<StoreState>((set, get) => ({
   currentSessionId: null,
   
   createSession: (title, type) => {
-    const sessionId = uuidv4();
+    const tempId = uuidv4(); // Temporary ID for immediate UI feedback
     const now = new Date();
-    const newSession: ResearchSession = {
-      id: sessionId,
-      title,
-      type,
-      icon: getTypeIcon(type),
-      createdAt: now,
-      updatedAt: now,
-      lastAccessed: now,
-      userId: get().user?.id,
-      sources: [],
-      chatMessages: [],
-      notes: [],
-      isActive: true
-    };
     
-    set((state) => {
-      const updatedSessions = [...state.researchSessions, newSession];
-      localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
-      return { 
-        researchSessions: updatedSessions,
-        currentSessionId: sessionId,
+    // Call backend API first if authenticated
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      // Create session in backend and wait for the real ID
+      return fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/research/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title,
+          model: 'gemini-1.5-flash',
+          tags: [type],
+          temperature: 0.7,
+          max_tokens: 4096
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to create research session');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Use the backend ID as the primary ID
+        const backendId = data.id;
+        const newSession: ResearchSession = {
+          id: backendId, // Use backend ID as primary ID
+          title,
+          type,
+          icon: getTypeIcon(type),
+          createdAt: new Date(data.created_at || now),
+          updatedAt: new Date(data.updated_at || now),
+          lastAccessed: now,
+          userId: get().user?.id,
+          sources: [],
+          chatMessages: [],
+          notes: [],
+          isActive: true
+        };
+        
+        set((state) => {
+          const updatedSessions = [...state.researchSessions, newSession];
+          localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+          return { 
+            researchSessions: updatedSessions,
+            currentSessionId: backendId,
+            sources: [],
+            chatMessages: [],
+            notes: []
+          };
+        });
+        
+        return backendId; // Return the backend ID
+      })
+      .catch(error => {
+        console.error('Failed to create research session in backend:', error);
+        // Fallback to local-only session
+        const newSession: ResearchSession = {
+          id: tempId,
+          title,
+          type,
+          icon: getTypeIcon(type),
+          createdAt: now,
+          updatedAt: now,
+          lastAccessed: now,
+          userId: get().user?.id,
+          sources: [],
+          chatMessages: [],
+          notes: [],
+          isActive: true
+        };
+        
+        set((state) => {
+          const updatedSessions = [...state.researchSessions, newSession];
+          localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+          return { 
+            researchSessions: updatedSessions,
+            currentSessionId: tempId,
+            sources: [],
+            chatMessages: [],
+            notes: []
+          };
+        });
+        
+        return tempId;
+      });
+    } else {
+      // Not authenticated - create local-only session
+      const newSession: ResearchSession = {
+        id: tempId,
+        title,
+        type,
+        icon: getTypeIcon(type),
+        createdAt: now,
+        updatedAt: now,
+        lastAccessed: now,
+        userId: get().user?.id,
         sources: [],
         chatMessages: [],
-        notes: []
+        notes: [],
+        isActive: true
       };
-    });
-    
-    return sessionId;
+      
+      set((state) => {
+        const updatedSessions = [...state.researchSessions, newSession];
+        localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+        return { 
+          researchSessions: updatedSessions,
+          currentSessionId: tempId,
+          sources: [],
+          chatMessages: [],
+          notes: []
+        };
+      });
+      
+      return tempId;
+    }
   },
   
   updateSession: (id, updates) => {
@@ -355,13 +464,16 @@ export const useStore = create<StoreState>((set, get) => ({
   // Notes (session-scoped)
   notes: [],
   addNote: (note) => {
+    const tempId = uuidv4();
+    const now = new Date();
     const newNote = {
       ...note,
-      id: uuidv4(),
-      createdAt: new Date(),
-      updatedAt: new Date()
+      id: tempId,
+      createdAt: now,
+      updatedAt: now
     };
     
+    // Update local state immediately
     set((state) => {
       const updatedNotes = [...state.notes, newNote];
       
@@ -373,6 +485,46 @@ export const useStore = create<StoreState>((set, get) => ({
             : session
         );
         localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+        
+        // Save to backend if authenticated
+        const token = localStorage.getItem('access_token');
+        if (token && state.currentSessionId) {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/notes/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              title: note.title,
+              content: note.content,
+              note_type: note.type,
+              research_id: state.currentSessionId
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            // Update note with backend ID
+            if (data.id) {
+              set((updateState) => {
+                const updatedNotes = updateState.notes.map(n => 
+                  n.id === tempId ? { ...n, id: data.id, backendId: data.id } : n
+                );
+                const updatedSessions = updateState.researchSessions.map(session =>
+                  session.id === state.currentSessionId 
+                    ? { ...session, notes: updatedNotes }
+                    : session
+                );
+                localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+                return { notes: updatedNotes, researchSessions: updatedSessions };
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Failed to save note to backend:', error);
+          });
+        }
+        
         return { notes: updatedNotes, researchSessions: updatedSessions };
       }
       
@@ -395,6 +547,30 @@ export const useStore = create<StoreState>((set, get) => ({
           : session
       );
       localStorage.setItem('research_sessions', JSON.stringify(updatedSessions));
+      
+      // Update in backend if authenticated
+      const token = localStorage.getItem('access_token');
+      const noteToUpdate = updatedNotes.find(n => n.id === id);
+      const backendId = (noteToUpdate as any)?.backendId || id;
+      
+      if (token && backendId) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/notes/${backendId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: noteToUpdate?.title,
+            content: noteToUpdate?.content,
+            note_type: noteToUpdate?.type
+          })
+        })
+        .catch(error => {
+          console.error('Failed to update note in backend:', error);
+        });
+      }
+      
       return { notes: updatedNotes, researchSessions: updatedSessions };
     }
     

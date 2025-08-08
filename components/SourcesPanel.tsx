@@ -9,7 +9,7 @@ import DiscoverModal from './DiscoverModal';
 interface SourcesPanelProps {
   panelState: 'normal' | 'expanded' | 'collapsed';
   onPanelStateChange: (state: 'normal' | 'expanded' | 'collapsed') => void;
-  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => string;
+  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => Promise<string> | string;
 }
 
 const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateChange, onEnsureSession }) => {

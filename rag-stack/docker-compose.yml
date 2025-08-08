@@ -1,0 +1,133 @@
+version: "3.9"
+
+services:
+  # FastAPI Application Service
+  rag-api:
+    build: ./services/api
+    container_name: rag-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_URI=mongodb://rag-mongo:27017/rag
+      - QDRANT_URL=http://rag-qdrant:6333
+      - REDIS_URL=redis://rag-redis:6379
+    depends_on:
+      rag-mongo:
+        condition: service_healthy
+      rag-qdrant:
+        condition: service_started
+      rag-redis:
+        condition: service_started
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./gcp-credentials.json:/app/gcp-credentials.json:ro
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Background Worker Service
+  rag-worker:
+    build: ./services/worker
+    container_name: rag-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_URI=mongodb://rag-mongo:27017/rag
+      - QDRANT_URL=http://rag-qdrant:6333
+      - REDIS_URL=redis://rag-redis:6379
+    depends_on:
+      rag-mongo:
+        condition: service_healthy
+      rag-qdrant:
+        condition: service_started
+      rag-redis:
+        condition: service_started
+    volumes:
+      - ./gcp-credentials.json:/app/gcp-credentials.json:ro
+      - rag_models:/app/models  # Cache for embedding models
+    networks:
+      - rag-network
+    command: ["python", "worker.py"]
+
+  # MongoDB Database
+  rag-mongo:
+    image: mongo:7
+    container_name: rag-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rag_admin
+      MONGO_INITDB_ROOT_PASSWORD: rag_password_2024
+      MONGO_INITDB_DATABASE: rag
+    ports:
+      - "27019:27017"  # Different port from existing MongoDB
+    volumes:
+      - rag_mongo_data:/data/db
+      - ./scripts/mongo-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - rag-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/rag --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Qdrant Vector Database
+  rag-qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - rag_qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Task Queue
+  rag-redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    restart: unless-stopped
+    command: redis-server --requirepass rag_redis_password
+    ports:
+      - "6380:6379"  # Different port from existing Redis
+    volumes:
+      - rag_redis_data:/data
+    networks:
+      - rag-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  rag-network:
+    driver: bridge
+    name: rag-network
+
+volumes:
+  rag_mongo_data:
+    name: rag_mongo_data
+  rag_qdrant_data:
+    name: rag_qdrant_data
+  rag_redis_data:
+    name: rag_redis_data
+  rag_models:
+    name: rag_models

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Paperclip, Mic, ChevronRight, FileText, ChevronLeft, Settings, Lightbulb, Scale, FileCheck, Search, BookOpen, MessageCircle } from 'lucide-react';
+import { Send, Upload, Paperclip, ChevronRight, FileText, ChevronLeft, Settings, Lightbulb, Scale, FileCheck, Search, BookOpen, Copy, Check, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { getApiUrl, config } from '../lib/config';
 
@@ -10,7 +10,7 @@ interface ChatPanelProps {
   onExpandSources?: () => void;
   studioPanelState?: 'normal' | 'collapsed';
   onExpandStudio?: () => void;
-  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => string;
+  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => Promise<string> | string;
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSources, studioPanelState, onExpandStudio, onEnsureSession }) => {
@@ -20,13 +20,15 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
     addChatMessage, 
     addSource,
     isChatInputFocused,
-    setIsChatInputFocused 
+    setIsChatInputFocused,
+    currentSessionId,
+    getCurrentSession
   } = useStore();
   
   const [inputValue, setInputValue] = useState('');
-  const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,44 +41,143 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
     scrollToBottom();
   }, [chatMessages]);
 
+  // Load conversation history when session changes
+  useEffect(() => {
+    const loadConversationHistory = async () => {
+      if (currentSessionId) {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          try {
+            const response = await fetch(
+              getApiUrl(`${config.api.endpoints.messages}/research/${currentSessionId}`),
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              }
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              // The messages are already loaded in the store from localStorage
+              // This would be used to sync with backend if needed
+              console.log('Conversation loaded from backend:', data);
+            }
+          } catch (error) {
+            console.error('Failed to load conversation history:', error);
+          }
+        }
+      }
+    };
+
+    loadConversationHistory();
+  }, [currentSessionId]);
+
   const handleSendMessage = async () => {
-    if (inputValue.trim()) {
+    if (inputValue.trim() || attachedFiles.length > 0) {
       // Ensure session exists before sending message
-      onEnsureSession('message');
+      const sessionId = await onEnsureSession('message');
       
-      addChatMessage(inputValue.trim(), true);
+      // Prepare message with attachments
       const userMessage = inputValue.trim();
+      const messageFiles = [...attachedFiles];
+      
+      // Clear input and attachments
       setInputValue('');
+      setAttachedFiles([]);
 
       try {
         setIsLoading(true);
-        // Call the backend chat endpoint
-        const response = await fetch(getApiUrl(config.api.endpoints.chat), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            content: userMessage,
-            session_id: sessionId 
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
         
-        // Store session ID from response
-        if (data.session_id && !sessionId) {
-          setSessionId(data.session_id);
-        }
+        // Add user message with files to local store immediately
+        const userMessageObj = {
+          content: userMessage,
+          files: messageFiles.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type
+          }))
+        };
+        addChatMessage(JSON.stringify(userMessageObj), true);
         
-        addChatMessage(data.content || 'No response from AI assistant.', false);
+        // Get auth token if available
+        const token = localStorage.getItem('access_token');
+        
+        // Check if we should use the authenticated endpoint or the simple chat endpoint
+        const useAuthenticatedEndpoint = token && (sessionId || currentSessionId);
+        
+        if (useAuthenticatedEndpoint) {
+          // Use the session ID directly (it's already the backend ObjectId)
+          const backendSessionId = sessionId || currentSessionId;
+          
+          // Create FormData for file upload
+          const formData = new FormData();
+          formData.append('message', userMessage);
+          messageFiles.forEach((file, index) => {
+            formData.append(`files`, file);
+          });
+          
+          // Use the authenticated messages endpoint for proper context persistence
+          const response = await fetch(getApiUrl(`${config.api.endpoints.messages}/research/${backendSessionId}/send`), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+              // Don't set Content-Type for FormData - browser sets it with boundary
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || 'Network response was not ok');
+          }
+
+          const data = await response.json();
+          
+          // Add assistant response
+          addChatMessage(data.assistant_message.content || 'No response from AI assistant.', false);
+        } else {
+          // Fallback to simple chat endpoint (for non-authenticated or initial state)
+          
+          // Prepare conversation history for context
+          const conversationHistory = chatMessages.map(msg => ({
+            role: msg.isUser ? 'user' : 'assistant',
+            content: msg.content
+          }));
+          
+          // Add the new user message to history
+          conversationHistory.push({
+            role: 'user',
+            content: userMessage
+          });
+          
+          const response = await fetch(getApiUrl(config.api.endpoints.chat), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              content: userMessage,
+              session_id: sessionId || currentSessionId,
+              conversation_history: conversationHistory,
+              context: {
+                session_title: getCurrentSession()?.title,
+                session_type: getCurrentSession()?.type,
+                sources_count: sources.length
+              }
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const data = await response.json();
+          addChatMessage(data.content || 'No response from AI assistant.', false);
+        }
       } catch (error) {
         console.error('Chat error:', error);
-        addChatMessage('Error connecting to AI assistant.', false);
+        addChatMessage(`Error: ${error instanceof Error ? error.message : 'Failed to connect to AI assistant'}`, false);
       } finally {
         setIsLoading(false);
       }
@@ -93,25 +194,42 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      Array.from(files).forEach(file => {
-        const fileType = file.type;
-        let sourceType: 'pdf' | 'doc' | 'txt' | 'url' = 'txt';
-        
-        if (fileType.includes('pdf')) sourceType = 'pdf';
-        else if (fileType.includes('document') || fileType.includes('word')) sourceType = 'doc';
-        
-        addSource({
-          name: file.name,
-          type: sourceType,
-          uploadDate: new Date(),
-          size: file.size
-        });
-      });
+      const newFiles = Array.from(files);
+      setAttachedFiles(prev => [...prev, ...newFiles]);
     }
     // Reset the input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const copyToClipboard = async (text: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  const addFileAsSource = (file: File) => {
+    const fileType = file.type;
+    let sourceType: 'pdf' | 'doc' | 'txt' | 'url' = 'txt';
+    
+    if (fileType.includes('pdf')) sourceType = 'pdf';
+    else if (fileType.includes('document') || fileType.includes('word')) sourceType = 'doc';
+    
+    addSource({
+      name: file.name,
+      type: sourceType,
+      uploadDate: new Date(),
+      size: file.size
+    });
   };
 
   if (sources.length === 0 && chatMessages.length === 0) {
@@ -199,20 +317,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
                   </div>
                 </div>
                 
-                {/* Voice Button */}
-                <button
-                  onMouseDown={() => setIsListening(true)}
-                  onMouseUp={() => setIsListening(false)}
-                  onMouseLeave={() => setIsListening(false)}
-                  className={`p-3 rounded-full transition-colors ${
-                    isListening 
-                      ? 'bg-red-600 text-white' 
-                      : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  <Mic className="w-5 h-5" />
-                </button>
-                
                 {/* Send Button */}
                 <button
                   onClick={handleSendMessage}
@@ -287,17 +391,75 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          {chatMessages.map((message) => (
-            <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] ${
-                message.isUser 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-slate-600'
-              } rounded-2xl px-4 py-3`}>
-                <p className="text-sm leading-relaxed">{message.content}</p>
+          {chatMessages.map((message) => {
+            let messageContent = message.content;
+            let attachedFiles = [];
+            
+            // Try to parse message content for files
+            try {
+              const parsedMessage = JSON.parse(message.content);
+              if (parsedMessage.content !== undefined && parsedMessage.files) {
+                messageContent = parsedMessage.content;
+                attachedFiles = parsedMessage.files;
+              }
+            } catch {
+              // Not JSON, use as is
+            }
+            
+            return (
+              <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] group relative ${
+                  message.isUser 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-slate-600'
+                } rounded-2xl px-4 py-3`}>
+                  
+                  {/* Copy button for assistant messages */}
+                  {!message.isUser && (
+                    <button
+                      onClick={() => copyToClipboard(messageContent, message.id)}
+                      className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-full p-1.5 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 transition-all"
+                      title="Copy message"
+                    >
+                      {copiedMessageId === message.id ? (
+                        <Check className="w-3 h-3 text-green-600" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-gray-500 dark:text-slate-400" />
+                      )}
+                    </button>
+                  )}
+                  
+                  {/* Attached files display */}
+                  {attachedFiles.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      {attachedFiles.map((file: any, index: number) => (
+                        <div key={index} className="flex items-center space-x-2 bg-white/10 rounded-lg p-2">
+                          <FileText className="w-4 h-4 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{file.name}</p>
+                            <p className="text-xs opacity-75">{(file.size / 1024).toFixed(1)}KB</p>
+                          </div>
+                          {!message.isUser && (
+                            <button
+                              onClick={() => addFileAsSource(file)}
+                              className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                            >
+                              Include as Source
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Message content */}
+                  {messageContent && (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{messageContent}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           
           {/* Loading Animation */}
           {isLoading && (
@@ -326,6 +488,29 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
             <span>{sources.length} sources</span>
           </div>
           
+          {/* Attached Files Preview */}
+          {attachedFiles.length > 0 && (
+            <div className="mb-3 space-y-2">
+              <p className="text-xs text-gray-600 dark:text-slate-400">Attached files:</p>
+              {attachedFiles.map((file, index) => (
+                <div key={index} className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-800 rounded-lg p-2">
+                  <FileText className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">{file.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">{(file.size / 1024).toFixed(1)}KB</p>
+                  </div>
+                  <button
+                    onClick={() => removeAttachedFile(index)}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Remove file"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div className="relative">
             <div className="flex items-end space-x-2">
               <div className="flex-1 relative">
@@ -345,31 +530,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ sourcesPanelState, onExpandSource
                 {/* Attachment Button */}
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+                  title="Attach files"
+                >
                   <Paperclip className="w-4 h-4" />
                 </button>
               </div>
               
-              {/* Voice Button */}
-              <button
-                onMouseDown={() => setIsListening(true)}
-                onMouseUp={() => setIsListening(false)}
-                onMouseLeave={() => setIsListening(false)}
-                className={`p-3 rounded-full transition-colors ${
-                  isListening 
-                    ? 'bg-red-600 text-white' 
-                    : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200'
-                }`}
-              >
-                <Mic className="w-5 h-5" />
-              </button>
-              
               {/* Send Button */}
               <button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() && attachedFiles.length === 0}
                 className={`p-3 rounded-full transition-colors ${
-                  inputValue.trim()
+                  (inputValue.trim() || attachedFiles.length > 0)
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                     : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600 cursor-not-allowed'
                 }`}

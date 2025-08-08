@@ -28,12 +28,16 @@ export function useSessionManager() {
 
   // Create a session when user performs their first action
   const ensureSession = useCallback(
-    (actionType: 'source' | 'message' | 'note', title?: string) => {
+    async (actionType: 'source' | 'message' | 'note', title?: string) => {
       if (!currentSessionId) {
         const sessionTitle = title || getDefaultTitle(actionType);
         const sessionType = getSessionTypeFromAction(actionType);
         
-        const newSessionId = createSession(sessionTitle, sessionType);
+        const sessionIdOrPromise = createSession(sessionTitle, sessionType);
+        // Handle both Promise and string return types
+        const newSessionId = sessionIdOrPromise instanceof Promise 
+          ? await sessionIdOrPromise 
+          : sessionIdOrPromise;
         
         // Update URL to include the session ID
         const currentUrl = window.location.pathname + window.location.search;

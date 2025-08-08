@@ -13,7 +13,10 @@ import {
   Maximize2,
   Edit3,
   Clock,
-  Trash2
+  Trash2,
+  Download,
+  MessageSquare,
+  ArrowUpRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { useStore } from '../store/useStore';
@@ -23,7 +26,7 @@ import NoteEditor from './NoteEditor';
 interface StudioPanelProps {
   panelState: 'normal' | 'collapsed';
   onPanelStateChange: (state: 'normal' | 'collapsed') => void;
-  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => string;
+  onEnsureSession: (actionType: 'source' | 'message' | 'note', title?: string) => Promise<string> | string;
 }
 
 const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChange, onEnsureSession }) => {
@@ -31,7 +34,10 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
     notes, 
     addNote, 
     updateNote,
-    deleteNote
+    deleteNote,
+    chatMessages,
+    getCurrentSession,
+    addSource
   } = useStore();
   
   const [workflowSearch, setWorkflowSearch] = useState('');
@@ -148,11 +154,72 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
     }
   };
 
+  const handleConvertToSource = (note: Note) => {
+    if (confirm(`Convert "${note.title}" to a source document? This will add it to your sources panel.`)) {
+      addSource({
+        name: `${note.title}.md`,
+        type: 'txt',
+        uploadDate: new Date(),
+        size: note.content.length // Approximate size
+      });
+      
+      // You could also create a downloadable markdown file here
+      const markdown = `# ${note.title}\n\n${note.content}`;
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const truncateHTML = (html: string, maxLength: number = 100) => {
     const div = document.createElement('div');
     div.innerHTML = html;
     const text = div.textContent || div.innerText || '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
+  const exportConversationToMarkdown = () => {
+    const session = getCurrentSession();
+    if (!session && chatMessages.length === 0) {
+      alert('No conversation to export');
+      return;
+    }
+
+    const title = session?.title || 'Conversation';
+    const type = session?.type || 'general';
+    const createdAt = session?.createdAt ? new Date(session.createdAt).toLocaleString() : new Date().toLocaleString();
+    
+    let markdown = `# ${title}\n\n`;
+    markdown += `**Type:** ${type}\n`;
+    markdown += `**Date:** ${createdAt}\n`;
+    markdown += `**Messages:** ${chatMessages.length}\n\n`;
+    markdown += `---\n\n`;
+    markdown += `## Conversation\n\n`;
+
+    chatMessages.forEach((message) => {
+      const timestamp = new Date(message.timestamp).toLocaleTimeString();
+      const role = message.isUser ? '**User**' : '**Assistant**';
+      markdown += `### ${role} - ${timestamp}\n\n`;
+      markdown += `${message.content}\n\n`;
+      markdown += `---\n\n`;
+    });
+
+    // Create and download the file
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_conversation.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Handle collapsed state
@@ -244,6 +311,28 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
         </div>
       </div>
 
+      {/* Tools Section */}
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Tools</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={exportConversationToMarkdown}
+            className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-left"
+            disabled={chatMessages.length === 0}
+          >
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-indigo-50 dark:bg-indigo-900/20">
+              <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-medium text-gray-900 dark:text-gray-100">Export Chat</h4>
+              <p className="text-xs text-gray-600 dark:text-slate-400">{chatMessages.length} messages</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* Research Tools Section */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
@@ -282,16 +371,28 @@ const StudioPanel: React.FC<StudioPanelProps> = ({ panelState, onPanelStateChang
                         <span className="text-xs text-gray-500 dark:text-slate-500">
                           {note.updatedAt ? new Date(note.updatedAt).toLocaleDateString() : 'No date'}
                         </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNote(note.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all"
-                          title="Delete note"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConvertToSource(note);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all"
+                            title="Convert to Source"
+                          >
+                            <ArrowUpRight className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteNote(note.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all"
+                            title="Delete note"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <button

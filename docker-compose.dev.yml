@@ -1,0 +1,135 @@
+# Development Infrastructure Docker Compose for Elenchus Legal AI
+# Only includes: MongoDB and RAG Stack (for use with devrun.sh)
+# Backend and Frontend run locally for development
+
+version: "3.9"
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: elenchus-mongodb-dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: elenchus_admin
+      MONGO_INITDB_ROOT_PASSWORD: elenchus_password_2024
+      MONGO_INITDB_DATABASE: elenchus
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_dev_data:/data/db
+      - ./backend/docker/mongo-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - elenchus-dev-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: elenchus-qdrant-dev
+    restart: unless-stopped
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - qdrant_dev_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__LOG_LEVEL=INFO
+    networks:
+      - elenchus-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for RAG Task Queue
+  redis-rag:
+    image: redis:7-alpine
+    container_name: elenchus-redis-rag-dev
+    restart: unless-stopped
+    command: redis-server --requirepass rag_queue_password --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_rag_dev_data:/data
+    networks:
+      - elenchus-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "rag_queue_password", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RQ Dashboard for monitoring background tasks
+  rq-dashboard:
+    image: eoranged/rq-dashboard
+    container_name: elenchus-rq-dashboard-dev
+    restart: unless-stopped
+    ports:
+      - "9181:9181"
+    environment:
+      - RQ_DASHBOARD_REDIS_URL=redis://:rag_queue_password@redis-rag:6379/1
+    depends_on:
+      - redis-rag
+    networks:
+      - elenchus-dev-network
+
+  # RAG Worker Service (optional for development - can be run locally)
+  rag-worker:
+    build: 
+      context: ./backend
+      dockerfile: docker/Dockerfile.rag-worker
+    container_name: elenchus-rag-worker-dev
+    restart: unless-stopped
+    environment:
+      # Database
+      - MONGODB_URL=mongodb://elenchus_admin:elenchus_password_2024@mongodb:27017/elenchus?authSource=admin
+      - MONGODB_DATABASE=elenchus
+      # RAG Configuration
+      - QDRANT_URL=http://qdrant:6333
+      - RQ_REDIS_URL=redis://:rag_queue_password@redis-rag:6379/1
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GCP_PROJECT=${GCP_PROJECT:-legalai-462213}
+      - GCP_BUCKET=${GCP_BUCKET:-legalai_documents}
+      - GCP_BUCKET_BASE_PATH=${GCP_BUCKET_BASE_PATH:-user_docs}
+      # Development settings
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend/gcp-credentials.json:/app/gcp-credentials.json:ro
+      - rag_dev_models:/app/models  # Cache for embedding models
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis-rag:
+        condition: service_healthy
+    networks:
+      - elenchus-dev-network
+    command: ["python", "-m", "app.services.rag_worker"]
+    profiles:
+      - worker  # Optional profile - start with --profile worker
+
+networks:
+  elenchus-dev-network:
+    driver: bridge
+    name: elenchus-dev-network
+
+volumes:
+  mongodb_dev_data:
+    name: elenchus_mongodb_dev_data
+  qdrant_dev_storage:
+    name: elenchus_qdrant_dev_storage
+  redis_rag_dev_data:
+    name: elenchus_redis_rag_dev_data
+  rag_dev_models:
+    name: elenchus_rag_dev_models

@@ -1,0 +1,40 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements files
+COPY requirements/ ./requirements/
+COPY requirements/base.txt ./requirements/
+COPY requirements/mongodb.txt ./requirements/
+COPY requirements/rag.txt ./requirements/
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements/base.txt && \
+    pip install --no-cache-dir -r requirements/mongodb.txt && \
+    pip install --no-cache-dir -r requirements/rag.txt
+
+# Copy application code
+COPY app/ ./app/
+COPY __init__.py .
+
+# Create models directory for caching
+RUN mkdir -p /app/models
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash ragworker && \
+    chown -R ragworker:ragworker /app
+USER ragworker
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=30s --start-period=30s --retries=3 \
+    CMD python -c "import redis; r=redis.from_url('${RQ_REDIS_URL}'); r.ping()" || exit 1
+
+# Run the worker
+CMD ["python", "-m", "app.services.rag_worker"]

@@ -44,6 +44,35 @@ class Settings(BaseSettings):
     LANGFUSE_SECRET_KEY: Optional[str] = Field(None, env="LANGFUSE_SECRET_KEY")
     LANGFUSE_PUBLIC_KEY: Optional[str] = Field(None, env="LANGFUSE_PUBLIC_KEY")
     LANGFUSE_HOST: str = Field("https://cloud.langfuse.com", env="LANGFUSE_HOST")
+    
+    # RAG Stack Configuration
+    # Vector Database - Qdrant
+    QDRANT_URL: str = Field("http://localhost:6333", env="QDRANT_URL")
+    QDRANT_COLLECTION_NAME: str = Field("legal_documents", env="QDRANT_COLLECTION_NAME")
+    QDRANT_API_KEY: Optional[str] = Field(None, env="QDRANT_API_KEY")
+    
+    # Embeddings Configuration
+    EMBED_MODEL: str = Field("sentence-transformers/all-MiniLM-L6-v2", env="EMBED_MODEL")
+    EMBED_DIMENSION: int = Field(384, env="EMBED_DIMENSION")
+    EMBEDDING_BATCH_SIZE: int = Field(32, env="EMBEDDING_BATCH_SIZE")
+    
+    # Google Cloud Platform Configuration
+    GCP_PROJECT: str = Field("legalai-462213", env="GCP_PROJECT")
+    GCP_BUCKET: str = Field("legalai_documents", env="GCP_BUCKET")
+    GCP_BUCKET_BASE_PATH: str = Field("user_docs", env="GCP_BUCKET_BASE_PATH")
+    GOOGLE_APPLICATION_CREDENTIALS: str = Field("./gcp-credentials.json", env="GOOGLE_APPLICATION_CREDENTIALS")
+    
+    # RAG Performance Settings
+    MAX_CHUNK_SIZE: int = Field(800, env="MAX_CHUNK_SIZE")
+    CHUNK_OVERLAP: int = Field(100, env="CHUNK_OVERLAP")
+    SEARCH_TOP_K: int = Field(8, env="SEARCH_TOP_K")
+    MAX_CONTEXT_LENGTH: int = Field(4000, env="MAX_CONTEXT_LENGTH")
+    
+    # Background Worker Configuration
+    WORKER_CONCURRENCY: int = Field(4, env="WORKER_CONCURRENCY")
+    TASK_TIMEOUT: int = Field(3600, env="TASK_TIMEOUT")
+    RETRY_ATTEMPTS: int = Field(3, env="RETRY_ATTEMPTS")
+    RQ_REDIS_URL: str = Field("redis://localhost:6379/1", env="RQ_REDIS_URL")
 
     class Config:
         env_file = ".env"

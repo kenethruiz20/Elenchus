@@ -137,13 +137,27 @@ check_port $FRONTEND_PORT
 check_port $BACKEND_PORT
 check_port $BACKEND_DEBUG_PORT
 
-# Start Docker services (MongoDB, Redis)
-echo -e "${CYAN}🐳 Starting Docker services...${NC}"
-docker-compose up mongodb redis -d
+# Start Docker services (MongoDB and RAG Stack)
+echo -e "${CYAN}🐳 Starting development infrastructure...${NC}"
+docker-compose -f docker-compose.dev.yml up -d
 
-# Wait for MongoDB to be ready
-echo -e "${YELLOW}⏳ Waiting for MongoDB...${NC}"
-sleep 5
+# Wait for services to be ready
+echo -e "${YELLOW}⏳ Waiting for infrastructure services...${NC}"
+sleep 10
+
+# Check if RAG services are healthy
+echo -e "${CYAN}🔍 Checking RAG services...${NC}"
+if curl -s http://localhost:6333/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Qdrant is ready${NC}"
+else
+    echo -e "${YELLOW}⚠️  Qdrant may still be starting...${NC}"
+fi
+
+if docker exec elenchus-redis-rag-dev redis-cli -a rag_queue_password ping > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Redis RAG is ready${NC}"
+else
+    echo -e "${YELLOW}⚠️  Redis RAG may still be starting...${NC}"
+fi
 
 # Start Backend with debugging
 echo -e "${CYAN}🔧 Starting backend with debugging...${NC}"
@@ -187,6 +201,11 @@ echo -e "${CYAN}📱 Application URLs:${NC}"
 echo -e "  🌐 Frontend:  ${BLUE}http://localhost:${FRONTEND_PORT}${NC}"
 echo -e "  🔧 Backend:   ${BLUE}http://localhost:${BACKEND_PORT}${NC}"
 echo -e "  📚 API Docs:  ${BLUE}http://localhost:${BACKEND_PORT}/docs${NC}"
+echo ""
+echo -e "${CYAN}🗃️  RAG Infrastructure:${NC}"
+echo -e "  🔍 Qdrant DB:    ${BLUE}http://localhost:6333${NC}"
+echo -e "  🔄 Redis RAG:    ${BLUE}localhost:6380${NC}"
+echo -e "  📊 RQ Dashboard: ${BLUE}http://localhost:9181${NC}"
 echo ""
 echo -e "${CYAN}🐛 Debugging:${NC}"
 echo -e "  🔍 Debug Port: ${BLUE}localhost:${BACKEND_DEBUG_PORT}${NC}"

@@ -1,4 +1,7 @@
-# Docker Compose for Elenchus Legal AI Full Stack
+# Production Docker Compose for Elenchus Legal AI Full Stack
+# Includes: MongoDB, Backend, Frontend, and RAG Stack
+
+version: "3.9"
 
 services:
   # MongoDB Database
@@ -24,6 +27,60 @@ services:
       retries: 3
       start_period: 40s
 
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: elenchus-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__LOG_LEVEL=INFO
+    networks:
+      - elenchus-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for RAG Task Queue
+  redis-rag:
+    image: redis:7-alpine
+    container_name: elenchus-redis-rag
+    restart: unless-stopped
+    command: redis-server --requirepass rag_queue_password --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_rag_data:/data
+    networks:
+      - elenchus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "rag_queue_password", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RQ Dashboard for monitoring background tasks
+  rq-dashboard:
+    image: eoranged/rq-dashboard
+    container_name: elenchus-rq-dashboard
+    restart: unless-stopped
+    ports:
+      - "9181:9181"
+    environment:
+      - RQ_DASHBOARD_REDIS_URL=redis://:rag_queue_password@redis-rag:6379/1
+    depends_on:
+      - redis-rag
+    networks:
+      - elenchus-network
+
   # FastAPI Backend
   backend:
     build:
@@ -32,19 +89,32 @@ services:
     container_name: elenchus-backend
     restart: unless-stopped
     environment:
+      # Database
       - MONGODB_URL=mongodb://elenchus_user:elenchus_app_password@mongodb:27017/elenchus
       - MONGODB_DATABASE=elenchus
+      # App Config
       - SECRET_KEY=your-super-secret-key-at-least-32-characters-long-docker
       - DEBUG=false
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:3001","http://frontend:3000"]
+      # RAG Configuration
+      - QDRANT_URL=http://qdrant:6333
+      - RQ_REDIS_URL=redis://:rag_queue_password@redis-rag:6379/1
+      - GCP_PROJECT=${GCP_PROJECT}
+      - GCP_BUCKET=${GCP_BUCKET}
+      - GCP_BUCKET_BASE_PATH=${GCP_BUCKET_BASE_PATH}
     ports:
       - "8001:8000"
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
+      - ./backend/gcp-credentials.json:/app/gcp-credentials.json:ro
     depends_on:
       mongodb:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis-rag:
         condition: service_healthy
     networks:
       - elenchus-network
@@ -54,6 +124,38 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # RAG Worker Service
+  rag-worker:
+    build: 
+      context: ./backend
+      dockerfile: docker/Dockerfile.rag-worker
+    container_name: elenchus-rag-worker
+    restart: unless-stopped
+    environment:
+      # Database
+      - MONGODB_URL=mongodb://elenchus_user:elenchus_app_password@mongodb:27017/elenchus
+      - MONGODB_DATABASE=elenchus
+      # RAG Configuration
+      - QDRANT_URL=http://qdrant:6333
+      - RQ_REDIS_URL=redis://:rag_queue_password@redis-rag:6379/1
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GCP_PROJECT=${GCP_PROJECT}
+      - GCP_BUCKET=${GCP_BUCKET}
+      - GCP_BUCKET_BASE_PATH=${GCP_BUCKET_BASE_PATH}
+    volumes:
+      - ./backend/gcp-credentials.json:/app/gcp-credentials.json:ro
+      - rag_models:/app/models  # Cache for embedding models
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis-rag:
+        condition: service_healthy
+    networks:
+      - elenchus-network
+    command: ["python", "-m", "app.services.rag_worker"]
 
   # Next.js Frontend
   frontend:
@@ -79,24 +181,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Redis Cache (optional)
-  redis:
-    image: redis:7-alpine
-    container_name: elenchus-redis
-    restart: unless-stopped
-    command: redis-server --requirepass elenchus_redis_password
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - elenchus-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 networks:
   elenchus-network:
     driver: bridge
@@ -105,5 +189,9 @@ networks:
 volumes:
   mongodb_data:
     name: elenchus_mongodb_data
-  redis_data:
-    name: elenchus_redis_data
+  qdrant_storage:
+    name: elenchus_qdrant_storage
+  redis_rag_data:
+    name: elenchus_redis_rag_data
+  rag_models:
+    name: elenchus_rag_models

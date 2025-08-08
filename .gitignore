@@ -82,5 +82,9 @@ next-env.d.ts
 logs
 *.log
 
-# Claves y secretos
+# Credentials and secrets
+creds/
+*.json
+!package*.json
+!tsconfig*.json
 github-actions-key.json 

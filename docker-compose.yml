@@ -1,8 +1,6 @@
 # Production Docker Compose for Elenchus Legal AI Full Stack
 # Includes: MongoDB, Backend, Frontend, and RAG Stack
 
-version: "3.9"
-
 services:
   # MongoDB Database
   mongodb:

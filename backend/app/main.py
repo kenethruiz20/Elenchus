@@ -7,10 +7,14 @@ from typing import Optional, Dict, Any
 
 from app.config.settings import settings
 from app.config.database import init_database, close_database
+from app.database import mongodb_manager, qdrant_manager
+# from app.services.rag_service import rag_service  # Disabled until ML dependencies installed
+from app.services.gcp_service import gcp_service
 from app.api import api_v1_router
 from app.services.model_router import model_router, ModelMessage, ModelRole
 from app.services.context_manager import context_manager, MessagePriority
 from app.services.langfuse_service import langfuse_service
+from app.middleware.rag_middleware import RAGSecurityMiddleware, RAGRequestLoggingMiddleware, RAGContextMiddleware
 
 
 @asynccontextmanager
@@ -18,10 +22,35 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     try:
+        # Initialize existing database
         await init_database()
-        print("✅ Database initialization completed")
+        print("✅ Legacy database initialization completed")
+        
+        # Initialize RAG system databases
+        await mongodb_manager.initialize()
+        print("✅ RAG MongoDB initialization completed")
+        
+        await qdrant_manager.initialize()
+        print("✅ RAG Qdrant initialization completed")
+        
+        # Initialize RAG service (disabled until ML dependencies installed)
+        # await rag_service.initialize()
+        # print("✅ RAG service initialization completed")
+        print("⚠️  RAG service disabled until ML dependencies installed")
+        
+        # Initialize GCP service (optional)
+        try:
+            gcp_initialized = await gcp_service.initialize()
+            if gcp_initialized:
+                print("✅ GCP service initialization completed")
+            else:
+                print("⚠️  GCP service not configured (optional)")
+        except Exception as e:
+            print(f"⚠️  GCP service initialization failed: {e}")
+        
+        print("🚀 All systems initialized successfully")
     except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
+        print(f"❌ System initialization failed: {e}")
         raise
     
     yield
@@ -29,6 +58,9 @@ async def lifespan(app: FastAPI):
     # Shutdown
     print("Shutting down...")
     await close_database()
+    await mongodb_manager.close()
+    await qdrant_manager.close()
+    print("✅ All connections closed")
 
 
 # Create FastAPI application
@@ -47,6 +79,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add RAG security middlewares
+app.add_middleware(RAGSecurityMiddleware)
+app.add_middleware(RAGRequestLoggingMiddleware)
+app.add_middleware(RAGContextMiddleware)
 
 # Include API routers
 app.include_router(api_v1_router)

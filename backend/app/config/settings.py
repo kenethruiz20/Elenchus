@@ -60,7 +60,9 @@ class Settings(BaseSettings):
     GCP_PROJECT: str = Field("legalai-462213", env="GCP_PROJECT")
     GCP_BUCKET: str = Field("legalai_documents", env="GCP_BUCKET")
     GCP_BUCKET_BASE_PATH: str = Field("user_docs", env="GCP_BUCKET_BASE_PATH")
-    GOOGLE_APPLICATION_CREDENTIALS: str = Field("./gcp-credentials.json", env="GOOGLE_APPLICATION_CREDENTIALS")
+    GCP_CREDENTIALS_PATH: Optional[str] = Field(None, env="GCP_CREDENTIALS_PATH")
+    GCP_CREDENTIALS_JSON: Optional[str] = Field(None, env="GCP_CREDENTIALS_JSON")
+    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = Field(None, env="GOOGLE_APPLICATION_CREDENTIALS")
     
     # RAG Performance Settings
     MAX_CHUNK_SIZE: int = Field(800, env="MAX_CHUNK_SIZE")

@@ -53,7 +53,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --build  - Force rebuild images"
-    echo "  --worker - Include RAG worker (development only)"
+    echo "  --worker - Include RAG worker (development only, requires Docker Compose 1.28+)"
     echo ""
     echo "Examples:"
     echo "  $0 dev up              # Start development infrastructure"
@@ -61,6 +61,9 @@ show_help() {
     echo "  $0 prod up --build     # Start production with rebuild"
     echo "  $0 dev logs            # Show development logs"
     echo "  $0 prod status         # Show production service status"
+    echo ""
+    echo "Alternative (for older Docker Compose):"
+    echo "  COMPOSE_PROFILES=worker docker-compose -f docker-compose.dev.yml up -d"
 }
 
 # Get Docker Compose file based on environment
@@ -86,7 +89,7 @@ start_services() {
     local env=$1
     local compose_file=$(get_compose_file $env)
     local build_flag=""
-    local profile_flags=""
+    local include_worker=false
     
     # Parse additional arguments
     shift
@@ -98,7 +101,7 @@ start_services() {
                 ;;
             --worker)
                 if [[ $env == "dev" ]]; then
-                    profile_flags="--profile worker"
+                    include_worker=true
                 fi
                 shift
                 ;;
@@ -115,11 +118,15 @@ start_services() {
         print_status "Building images..."
     fi
     
-    if [[ -n $profile_flags ]]; then
-        print_status "Including additional profiles: $profile_flags"
+    # Check if we should include the worker
+    if [[ $include_worker == true ]]; then
+        print_status "Including RAG worker service"
+        # Use environment variable method for better compatibility
+        COMPOSE_PROFILES=worker docker-compose -f $compose_file up -d $build_flag
+    else
+        # Start without worker (default services)
+        docker-compose -f $compose_file up -d $build_flag
     fi
-    
-    docker-compose -f $compose_file up -d $build_flag $profile_flags
     
     print_status "Services started successfully!"
     

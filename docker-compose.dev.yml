@@ -2,8 +2,6 @@
 # Only includes: MongoDB and RAG Stack (for use with devrun.sh)
 # Backend and Frontend run locally for development
 
-version: "3.9"
-
 services:
   # MongoDB Database
   mongodb:
@@ -117,7 +115,7 @@ services:
       - elenchus-dev-network
     command: ["python", "-m", "app.services.rag_worker"]
     profiles:
-      - worker  # Optional profile - start with --profile worker
+      - worker  # Optional profile - start with COMPOSE_PROFILES=worker or --worker flag
 
 networks:
   elenchus-dev-network:

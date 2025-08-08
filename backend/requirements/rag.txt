@@ -6,8 +6,8 @@ qdrant-client==1.7.0            # Qdrant vector database client
 
 # Embeddings & ML
 sentence-transformers==2.2.2    # Sentence embeddings
-torch==2.1.0                    # PyTorch (CPU version)
-transformers==4.35.0            # Hugging Face transformers
+torch>=2.2.0                    # PyTorch (CPU version, compatible with Python 3.12)
+transformers>=4.35.0            # Hugging Face transformers
 
 # Document Processing & Chunking
 unstructured==0.11.2            # Advanced document parsing

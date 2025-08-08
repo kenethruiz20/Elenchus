@@ -11,11 +11,10 @@ import re
 
 import PyPDF2
 from docx import Document
-import structlog
 
 from ..config.settings import settings
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class DocumentProcessor:
@@ -239,17 +238,98 @@ class DocumentProcessor:
             validation_result["valid"] = False
             validation_result["errors"].append(f"File size ({len(file_content)} bytes) exceeds maximum allowed size ({max_size} bytes)")
         
+        # Check if file is empty
+        if len(file_content) == 0:
+            validation_result["valid"] = False
+            validation_result["errors"].append("File is empty")
+        
         # Check filename
         if not filename or len(filename.strip()) == 0:
             validation_result["valid"] = False
             validation_result["errors"].append("Filename is required")
         
         # Check for supported extensions
-        supported_extensions = ['.pdf', '.doc', '.docx', '.txt']
+        supported_extensions = ['.pdf', '.doc', '.docx', '.txt', '.md']
         if not any(filename.lower().endswith(ext) for ext in supported_extensions):
-            validation_result["warnings"].append(f"File extension may not be supported. Supported: {', '.join(supported_extensions)}")
+            validation_result["valid"] = False
+            validation_result["errors"].append(f"Unsupported file type. Supported: {', '.join(supported_extensions)}")
         
         return validation_result
+    
+    def extract_document_metadata(self, file_content: bytes, filename: str) -> Dict[str, Any]:
+        """Extract comprehensive document metadata."""
+        metadata = {
+            'filename': filename,
+            'file_size': len(file_content),
+            'file_hash': self.generate_document_hash(file_content),
+        }
+        
+        # Detect file type
+        file_ext = Path(filename).suffix.lower()
+        if file_ext in ['.pdf']:
+            metadata['file_type'] = 'PDF'
+        elif file_ext in ['.doc', '.docx']:
+            metadata['file_type'] = 'DOCX'
+        elif file_ext in ['.txt']:
+            metadata['file_type'] = 'TXT'
+        elif file_ext in ['.md']:
+            metadata['file_type'] = 'MARKDOWN'
+        else:
+            metadata['file_type'] = 'UNKNOWN'
+        
+        try:
+            # Process document to get additional metadata
+            document_data = self.process_document(file_content, filename, metadata['file_type'])
+            if 'metadata' in document_data:
+                metadata.update(document_data['metadata'])
+                
+            # Add text content length info
+            if 'text_content' in document_data:
+                total_text = ' '.join([content['text'] for content in document_data['text_content']])
+                metadata['total_words'] = len(total_text.split())
+                metadata['total_chars'] = len(total_text)
+                
+        except Exception as e:
+            logger.error(f"Failed to extract extended metadata: {str(e)}")
+            # Continue with basic metadata
+        
+        return metadata
+    
+    async def process_document_async(self, file_content: bytes, filename: str, user_id: str) -> Dict[str, Any]:
+        """Async wrapper for document processing with full workflow."""
+        try:
+            # Validate document
+            validation = self.validate_document(file_content, filename)
+            if not validation['valid']:
+                return {
+                    'success': False,
+                    'error': 'Validation failed',
+                    'validation_errors': validation['errors']
+                }
+            
+            # Extract metadata
+            metadata = self.extract_document_metadata(file_content, filename)
+            
+            # Process document content
+            document_data = self.process_document(file_content, filename, metadata['file_type'])
+            
+            # Create chunks
+            chunks = self.create_chunks(document_data['text_content'])
+            
+            return {
+                'success': True,
+                'metadata': metadata,
+                'text_content': document_data['text_content'],
+                'chunks': chunks,
+                'validation': validation
+            }
+            
+        except Exception as e:
+            logger.error(f"Document processing failed for {filename}: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
 
 # Global document processor instance

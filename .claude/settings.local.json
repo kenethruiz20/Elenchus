@@ -64,7 +64,8 @@
       "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")",
       "Bash(./venv/bin/python -c \"from app.main import app; print(''✅ Import successful - no errors'')\")",
       "Bash(./venv/bin/python:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(./venv/bin/pip install PyPDF2 python-docx)"
     ],
     "deny": []
   }

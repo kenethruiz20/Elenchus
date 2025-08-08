@@ -10,6 +10,7 @@ from app.config.database import init_database, close_database
 from app.database import mongodb_manager, qdrant_manager
 # from app.services.rag_service import rag_service  # Disabled until ML dependencies installed
 from app.services.gcp_service import gcp_service
+from app.services.rag_upload_service import rag_upload_service
 from app.api import api_v1_router
 from app.services.model_router import model_router, ModelMessage, ModelRole
 from app.services.context_manager import context_manager, MessagePriority
@@ -33,10 +34,17 @@ async def lifespan(app: FastAPI):
         await qdrant_manager.initialize()
         print("✅ RAG Qdrant initialization completed")
         
+        # Initialize RAG upload service
+        upload_success = await rag_upload_service.initialize()
+        if upload_success:
+            print("✅ RAG upload service initialization completed")
+        else:
+            print("⚠️  RAG upload service initialization failed")
+        
         # Initialize RAG service (disabled until ML dependencies installed)
         # await rag_service.initialize()
         # print("✅ RAG service initialization completed")
-        print("⚠️  RAG service disabled until ML dependencies installed")
+        print("⚠️  RAG full service disabled until ML dependencies installed")
         
         # Initialize GCP service (optional)
         try:

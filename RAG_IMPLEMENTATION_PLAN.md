@@ -102,15 +102,15 @@ Build a production-ready RAG (Retrieval Augmented Generation) system with:
 ---
 
 ### **Stage 4: Document Upload & Registration**
-**Status: ⏳ Pending**
+**Status: ✅ Completed**
 
 **Tasks:**
-- [ ] Implement POST /documents endpoint
-- [ ] File validation and metadata extraction
-- [ ] GCS upload functionality
-- [ ] Document hash calculation (SHA256)
-- [ ] Database document registration
-- [ ] Error handling and validation
+- [x] Implement POST /documents endpoint
+- [x] File validation and metadata extraction
+- [x] GCS upload functionality
+- [x] Document hash calculation (SHA256)
+- [x] Database document registration
+- [x] Error handling and validation
 
 **Deliverables:**
 - Document upload API endpoint

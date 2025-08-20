@@ -20,6 +20,12 @@ export interface RAGDocument {
   category?: string;
   processing_progress: number;
   processing_error?: string;
+  // AI metadata fields
+  ai_summary?: string;
+  ai_detailed_description?: string;
+  ai_topics?: string[];
+  ai_metadata_generated_at?: string;
+  can_download?: boolean;
 }
 
 export type UploadResponse = RAGDocument;

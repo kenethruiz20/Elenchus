@@ -27,6 +27,8 @@ class DocumentType(str, Enum):
     DOC = "doc"
     DOCX = "docx"
     TXT = "txt"
+    CSV = "csv"
+    MARKDOWN = "md"
     OTHER = "other"
 
 
@@ -42,9 +44,14 @@ class DocumentMetadata(BaseModel):
     page_count: Optional[int] = None
     word_count: Optional[int] = None
     char_count: Optional[int] = None
-    language: Optional[str] = None
+    # language field removed to avoid MongoDB text index conflicts
     file_size: Optional[int] = None
     mime_type: Optional[str] = None
+    # AI-generated metadata
+    ai_summary: Optional[str] = None  # Short description
+    ai_detailed_description: Optional[str] = None  # Detailed description
+    ai_topics: List[str] = Field(default_factory=list)  # Key topics
+    ai_metadata_generated_at: Optional[datetime] = None
     custom_fields: Dict[str, Any] = Field(default_factory=dict)
 
 

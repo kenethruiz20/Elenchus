@@ -14,6 +14,8 @@ from app.models.rag_document import RAGDocument, DocumentStatus, DocumentType, D
 from app.models.rag_chunk import RAGChunk, ChunkType, ChunkMetadata
 from app.services.document_processor import document_processor
 from app.services.gcp_service import gcp_service
+from app.services.content_extractor import content_extractor
+from app.services.document_ai_service import document_ai_service
 from app.database import mongodb_manager
 
 logger = logging.getLogger(__name__)
@@ -184,6 +186,8 @@ class RAGUploadService:
             return DocumentType.TXT
         elif file_ext == '.md':
             return DocumentType.MARKDOWN
+        elif file_ext == '.csv':
+            return DocumentType.CSV
         else:
             return DocumentType.TXT  # Default fallback
     
@@ -226,6 +230,46 @@ class RAGUploadService:
             await document.mark_processing_started(f"job_{uuid.uuid4()}")
             logger.info(f"Started processing document {document_id}")
             
+            # Extract content for AI analysis
+            ai_metadata = {}
+            if content_extractor.can_extract(document.original_filename):
+                logger.info(f"Extracting content for AI analysis: {document.original_filename}")
+                extraction_result = await content_extractor.extract_content(
+                    file_content, 
+                    document.original_filename
+                )
+                
+                if extraction_result['success'] and extraction_result['text_content']:
+                    # Initialize AI service if not already done
+                    if not document_ai_service.is_initialized():
+                        await document_ai_service.initialize()
+                    
+                    if document_ai_service.is_initialized():
+                        # Generate AI metadata
+                        logger.info(f"Generating AI metadata for {document.original_filename}")
+                        ai_result = await document_ai_service.generate_document_metadata(
+                            extraction_result['text_content'],
+                            document.original_filename,
+                            document.file_type.value
+                        )
+                        
+                        if ai_result['success']:
+                            ai_metadata = {
+                                'ai_summary': ai_result['ai_summary'],
+                                'ai_detailed_description': ai_result['ai_detailed_description'],
+                                'ai_topics': ai_result['ai_topics'],
+                                'ai_metadata_generated_at': datetime.utcnow()
+                            }
+                            logger.info(f"AI metadata generated successfully for {document_id}")
+                        else:
+                            logger.warning(f"AI metadata generation failed: {ai_result.get('error')}")
+                    else:
+                        logger.warning("Document AI service not available")
+                else:
+                    logger.warning(f"Content extraction failed: {extraction_result.get('error')}")
+            else:
+                logger.info(f"File format not supported for content extraction: {document.original_filename}")
+            
             # Process document with document_processor
             processing_result = await document_processor.process_document_async(
                 file_content,
@@ -262,6 +306,13 @@ class RAGUploadService:
                 chunk.calculate_quality_metrics()
                 await chunk.insert()
                 chunks_created += 1
+            
+            # Update document with AI metadata if available
+            if ai_metadata:
+                logger.info(f"Updating document {document_id} with AI metadata")
+                for key, value in ai_metadata.items():
+                    setattr(document.metadata, key, value)
+                await document.save()
             
             # Mark as completed (without embeddings for now)
             from app.models.rag_document import ProcessingMetrics
@@ -379,7 +430,13 @@ class RAGUploadService:
                     'created_at': doc.created_at,
                     'updated_at': doc.updated_at,
                     'tags': doc.tags,
-                    'category': doc.category
+                    'category': doc.category,
+                    # AI-generated metadata
+                    'ai_summary': doc.metadata.ai_summary,
+                    'ai_detailed_description': doc.metadata.ai_detailed_description,
+                    'ai_topics': doc.metadata.ai_topics,
+                    'ai_metadata_generated_at': doc.metadata.ai_metadata_generated_at,
+                    'can_download': doc.gcs_path is not None
                 })
             
             return {

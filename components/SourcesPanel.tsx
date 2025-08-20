@@ -19,6 +19,41 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [isDiscoverModalOpen, setIsDiscoverModalOpen] = useState(false);
 
+  // Periodically refresh processing sources to get AI metadata updates
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const processingSources = sources.filter(source => 
+        source.ragDocumentId && 
+        (source.status === 'processing' || source.status === 'pending') &&
+        isAuthenticated
+      );
+
+      for (const source of processingSources) {
+        try {
+          const document = await ragService.getDocument(source.ragDocumentId!);
+          if (document.status === 'completed' && document.ai_summary) {
+            updateSource(source.id, {
+              status: 'completed',
+              aiSummary: document.ai_summary,
+              aiDetailedDescription: document.ai_detailed_description,
+              aiTopics: document.ai_topics,
+              aiMetadataGeneratedAt: document.ai_metadata_generated_at
+            });
+          } else if (document.status === 'failed') {
+            updateSource(source.id, {
+              status: 'failed',
+              processingError: document.processing_error || 'Processing failed'
+            });
+          }
+        } catch (error) {
+          console.error('Failed to refresh source status:', error);
+        }
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [sources, updateSource, isAuthenticated]);
+
   // Handle panel state changes when source is selected/deselected
   useEffect(() => {
     if (selectedSource && panelState === 'normal') {
@@ -102,11 +137,15 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ panelState, onPanelStateCha
           }
         );
 
-        // Update source with successful upload
+        // Update source with successful upload and AI metadata
         updateSource(sourceId, {
           status: response.status as 'uploading' | 'pending' | 'processing' | 'completed' | 'failed',
           ragDocumentId: response.id,
-          uploadProgress: 100
+          uploadProgress: 100,
+          aiSummary: response.ai_summary,
+          aiDetailedDescription: response.ai_detailed_description,
+          aiTopics: response.ai_topics,
+          aiMetadataGeneratedAt: response.ai_metadata_generated_at
         });
 
       } catch (error) {

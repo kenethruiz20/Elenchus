@@ -5,7 +5,7 @@ Stage 4: Document Upload & Registration functionality.
 
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from datetime import datetime
 import json
 
@@ -13,6 +13,7 @@ from app.core.auth import get_current_active_user
 from app.models.user import User
 from app.models.rag_document import RAGDocument, DocumentStatus
 from app.services.rag_upload_service import rag_upload_service
+from app.services.gcp_service import gcp_service
 
 router = APIRouter(prefix="/rag", tags=["rag-upload"])
 
@@ -81,7 +82,13 @@ async def upload_document(
             "updated_at": document.updated_at,
             "tags": document.tags,
             "category": document.category,
-            "processing_progress": 0.0 if document.status == DocumentStatus.PENDING else None
+            "processing_progress": 0.0 if document.status == DocumentStatus.PENDING else None,
+            # AI-generated metadata
+            "ai_summary": document.metadata.ai_summary,
+            "ai_detailed_description": document.metadata.ai_detailed_description,
+            "ai_topics": document.metadata.ai_topics,
+            "ai_metadata_generated_at": document.metadata.ai_metadata_generated_at,
+            "can_download": document.gcs_path is not None
         }
     
     except ValueError as e:
@@ -138,6 +145,66 @@ async def list_user_documents(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list documents: {str(e)}"
+        )
+
+
+@router.get("/documents/{document_id}")
+async def get_document_details(
+    document_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get full details of a specific document including AI metadata.
+    Multi-tenant: Only accessible by document owner.
+    """
+    try:
+        # Verify document ownership and get document
+        from beanie import PydanticObjectId
+        try:
+            obj_id = PydanticObjectId(document_id)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid document ID format"
+            )
+            
+        document = await RAGDocument.find_one(
+            RAGDocument.id == obj_id,
+            RAGDocument.user_id == str(current_user.id)
+        )
+        
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        return {
+            "id": str(document.id),
+            "filename": document.original_filename,
+            "file_type": document.file_type.value,
+            "file_size": document.file_size,
+            "status": document.status.value,
+            "chunks_count": document.chunks_count,
+            "embeddings_created": document.embeddings_created,
+            "created_at": document.created_at.isoformat(),
+            "updated_at": document.updated_at.isoformat(),
+            "tags": document.tags,
+            "category": document.category,
+            "ai_summary": document.metadata.ai_summary if document.metadata else None,
+            "ai_detailed_description": document.metadata.ai_detailed_description if document.metadata else None,
+            "ai_topics": document.metadata.ai_topics if document.metadata else None,
+            "ai_metadata_generated_at": document.metadata.ai_metadata_generated_at.isoformat() if document.metadata and document.metadata.ai_metadata_generated_at else None,
+            "can_download": document.gcs_path is not None,
+            "processing_error": None  # This field doesn't exist on the model yet
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get document details: {str(e)}"
         )
 
 
@@ -222,6 +289,93 @@ async def delete_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete document: {str(e)}"
         )
+
+
+@router.get("/documents/{document_id}/download")
+async def download_document(
+    document_id: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Download a document file.
+    Multi-tenant: Only accessible by document owner.
+    """
+    try:
+        # Verify document ownership
+        document = await RAGDocument.find_one(
+            RAGDocument.id == document_id,
+            RAGDocument.user_id == str(current_user.id)
+        )
+        
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        # Check if document has GCS path
+        if not document.gcs_path:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document file not available for download"
+            )
+        
+        # Download from GCS
+        download_result = await gcp_service.download_file(
+            user_id=str(current_user.id),
+            file_id=document.filename.split('_')[0],  # Extract file ID from filename
+            filename=document.original_filename
+        )
+        
+        if not download_result['success']:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=download_result.get('error', 'File not found')
+            )
+        
+        # Determine content type
+        content_type = _get_content_type_from_extension(document.original_filename)
+        
+        # Create streaming response
+        def iter_file_content():
+            yield download_result['content']
+        
+        return StreamingResponse(
+            iter_file_content(),
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{document.original_filename}\"",
+                "Content-Length": str(len(download_result['content']))
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to download document: {str(e)}"
+        )
+
+
+def _get_content_type_from_extension(filename: str) -> str:
+    """Get content type from file extension."""
+    from pathlib import Path
+    
+    file_ext = Path(filename).suffix.lower()
+    
+    content_types = {
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.txt': 'text/plain',
+        '.csv': 'text/csv',
+        '.md': 'text/markdown',
+        '.rtf': 'application/rtf',
+        '.odt': 'application/vnd.oasis.opendocument.text'
+    }
+    
+    return content_types.get(file_ext, 'application/octet-stream')
 
 
 @router.get("/user/stats")

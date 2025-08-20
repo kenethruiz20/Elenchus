@@ -12,6 +12,11 @@ export interface Source {
   status?: 'uploading' | 'pending' | 'processing' | 'completed' | 'failed';
   uploadProgress?: number;
   processingError?: string;
+  // AI metadata fields
+  aiSummary?: string;
+  aiDetailedDescription?: string;
+  aiTopics?: string[];
+  aiMetadataGeneratedAt?: string;
 }
 
 export interface ChatMessage {

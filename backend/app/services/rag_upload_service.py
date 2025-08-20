@@ -105,7 +105,7 @@ class RAGUploadService:
                 page_count=file_metadata.get('total_pages', 0),
                 word_count=file_metadata.get('total_words', 0),
                 char_count=file_metadata.get('total_chars', 0),
-                language='en',  # Default for now
+                # language='en',  # Commented out to avoid MongoDB text index conflict
                 creation_date=datetime.utcnow()
             )
             
@@ -115,12 +115,15 @@ class RAGUploadService:
             # Upload to GCS if available
             gcs_path = None
             if gcp_service.is_initialized():
+                # Determine correct content type based on file extension
+                content_type = self._get_content_type(original_filename)
+                
                 upload_result = await gcp_service.upload_file(
                     user_id=user_id,
                     file_id=temp_file_id,
                     filename=original_filename,
                     file_content=file_content,
-                    content_type=file.content_type
+                    content_type=content_type
                 )
                 
                 if upload_result['success']:
@@ -183,6 +186,24 @@ class RAGUploadService:
             return DocumentType.MARKDOWN
         else:
             return DocumentType.TXT  # Default fallback
+    
+    def _get_content_type(self, filename: str) -> str:
+        """Determine content type from filename."""
+        from pathlib import Path
+        
+        file_ext = Path(filename).suffix.lower()
+        
+        content_types = {
+            '.pdf': 'application/pdf',
+            '.doc': 'application/msword',
+            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.txt': 'text/plain',
+            '.md': 'text/markdown',
+            '.rtf': 'application/rtf',
+            '.odt': 'application/vnd.oasis.opendocument.text'
+        }
+        
+        return content_types.get(file_ext, 'application/octet-stream')
     
     async def _process_document_background(self, document_id: str, file_content: bytes, user_id: str):
         """Background task to process document content."""
@@ -254,7 +275,9 @@ class RAGUploadService:
             logger.info(f"Document {document_id} processing completed: {chunks_created} chunks created")
             
         except Exception as e:
-            logger.error(f"Background processing failed for document {document_id}: {str(e)}")
+            import traceback
+            error_msg = f"Background processing failed for document {document_id}: {str(e)}\n{traceback.format_exc()}"
+            logger.error(error_msg)
             # Try to mark as failed if document still exists
             try:
                 from beanie import PydanticObjectId
@@ -266,8 +289,8 @@ class RAGUploadService:
                 document = await RAGDocument.find_one(RAGDocument.id == obj_id)
                 if document:
                     await document.mark_processing_failed(str(e))
-            except:
-                pass
+            except Exception as inner_e:
+                logger.error(f"Failed to mark document as failed: {str(inner_e)}")
     
     async def get_document_status(self, document_id: str, user_id: str) -> Dict[str, Any]:
         """Get processing status of a document."""

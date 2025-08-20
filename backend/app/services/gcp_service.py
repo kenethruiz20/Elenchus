@@ -122,10 +122,6 @@ class GCPService:
             blob_path = self._get_blob_path(user_id, file_id, filename)
             blob = self._bucket.blob(blob_path)
             
-            # Set content type if provided
-            if content_type:
-                blob.content_type = content_type
-            
             # Add metadata
             blob.metadata = {
                 'user_id': user_id,
@@ -135,8 +131,11 @@ class GCPService:
                 'uploaded_by': 'rag_system'
             }
             
-            # Upload file
-            blob.upload_from_string(file_content)
+            # Upload file with explicit content type
+            blob.upload_from_string(
+                file_content,
+                content_type=content_type if content_type else 'application/octet-stream'
+            )
             
             logger.info(f"Successfully uploaded file to GCS: {blob_path}")
             
@@ -145,7 +144,7 @@ class GCPService:
                 'gcs_path': blob_path,
                 'blob_name': blob.name,
                 'size': len(file_content),
-                'content_type': blob.content_type,
+                'content_type': content_type if content_type else 'application/octet-stream',
                 'upload_time': datetime.utcnow(),
                 'public_url': None  # We don't make files public by default
             }

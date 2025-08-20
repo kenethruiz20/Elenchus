@@ -32,7 +32,7 @@ class ChunkMetadata(BaseModel):
     sentence_count: int = 0
     word_count: int = 0
     char_count: int = 0
-    language: Optional[str] = None
+    # language: Optional[str] = None  # Commented out to avoid MongoDB text index conflict
     confidence_score: Optional[float] = None  # OCR or extraction confidence
     extraction_method: Optional[str] = None  # How the text was extracted
     custom_fields: Dict[str, Any] = Field(default_factory=dict)
@@ -109,8 +109,8 @@ class RAGChunk(Document):
                 ("metadata.page_number", pymongo.ASCENDING),
                 ("chunk_index", pymongo.ASCENDING)
             ],
-            # Text search index
-            [("text", pymongo.TEXT), ("metadata.section_title", pymongo.TEXT)],
+            # Text search index - removed due to language field conflict
+            # [("text", pymongo.TEXT), ("metadata.section_title", pymongo.TEXT)],
         ]
 
     @classmethod

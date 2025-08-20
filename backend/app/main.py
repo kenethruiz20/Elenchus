@@ -34,7 +34,17 @@ async def lifespan(app: FastAPI):
         await qdrant_manager.initialize()
         print("✅ RAG Qdrant initialization completed")
         
-        # Initialize RAG upload service
+        # Initialize GCP service BEFORE RAG upload service (needed for file uploads)
+        try:
+            gcp_initialized = await gcp_service.initialize()
+            if gcp_initialized:
+                print("✅ GCP service initialization completed")
+            else:
+                print("⚠️  GCP service not configured (optional)")
+        except Exception as e:
+            print(f"⚠️  GCP service initialization failed: {e}")
+        
+        # Initialize RAG upload service (needs GCP to be initialized first)
         upload_success = await rag_upload_service.initialize()
         if upload_success:
             print("✅ RAG upload service initialization completed")
@@ -45,16 +55,6 @@ async def lifespan(app: FastAPI):
         # await rag_service.initialize()
         # print("✅ RAG service initialization completed")
         print("⚠️  RAG full service disabled until ML dependencies installed")
-        
-        # Initialize GCP service (optional)
-        try:
-            gcp_initialized = await gcp_service.initialize()
-            if gcp_initialized:
-                print("✅ GCP service initialization completed")
-            else:
-                print("⚠️  GCP service not configured (optional)")
-        except Exception as e:
-            print(f"⚠️  GCP service initialization failed: {e}")
         
         print("🚀 All systems initialized successfully")
     except Exception as e:

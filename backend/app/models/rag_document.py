@@ -115,8 +115,8 @@ class RAGDocument(Document):
                 ("user_id", pymongo.ASCENDING),
                 ("file_type", pymongo.ASCENDING)
             ],
-            # Text search index for filename and metadata
-            [("filename", pymongo.TEXT), ("metadata.title", pymongo.TEXT)],
+            # Text search index for filename and metadata - removed due to language field conflict
+            # [("filename", pymongo.TEXT), ("metadata.title", pymongo.TEXT)],
         ]
 
     async def mark_processing_started(self, job_id: str = None):

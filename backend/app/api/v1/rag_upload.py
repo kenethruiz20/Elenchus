@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 import json
 
-from app.core.auth import get_current_active_user, get_current_verified_user
+from app.core.auth import get_current_active_user
 from app.models.user import User
 from app.models.rag_document import RAGDocument, DocumentStatus
 from app.services.rag_upload_service import rag_upload_service
@@ -23,11 +23,11 @@ async def upload_document(
     file: UploadFile = File(...),
     tags: str = Form("[]"),
     category: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_verified_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Upload a document for RAG processing.
-    Requires verified user. Starts background processing automatically.
+    Requires authenticated user. Starts background processing automatically.
     """
     # Validate file
     if not file.filename:

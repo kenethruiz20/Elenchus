@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import asyncio
 from datetime import datetime
 
-from app.core.auth import get_current_active_user, get_current_verified_user
+from app.core.auth import get_current_active_user
 from app.models.user import User
 from app.models.rag_document import RAGDocument, DocumentStatus
 from app.models.rag_session import RAGSession, SessionType
@@ -36,11 +36,11 @@ async def upload_document(
     file: UploadFile = File(...),
     tags: str = Form("[]"),
     category: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_verified_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Upload a document for RAG processing.
-    Requires verified user. Starts background processing automatically.
+    Requires authenticated user. Starts background processing automatically.
     """
     # Validate file
     if not file.filename:
@@ -551,7 +551,7 @@ async def rag_system_health():
 @router.post("/documents/batch", response_model=BatchOperationResponse)
 async def batch_document_operation(
     request: BatchDocumentRequest,
-    current_user: User = Depends(get_current_verified_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Perform batch operations on multiple documents.
